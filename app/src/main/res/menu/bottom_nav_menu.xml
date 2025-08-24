@@ -2,10 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigation_substitution"
-        android:icon="@android:drawable/ic_menu_today"
+        android:icon="@drawable/ic_swap_horiz_24"
         android:title="Vertretung" />
     <item
         android:id="@+id/navigation_timetable"
-        android:icon="@android:drawable/ic_menu_agenda"
+        android:icon="@drawable/ic_schedule_24"
         android:title="Stundenplan" />
 </menu>

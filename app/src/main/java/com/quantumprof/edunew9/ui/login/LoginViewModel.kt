@@ -9,14 +9,14 @@ import com.quantumprof.edunew9.data.EdupageRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = EdupageRepository(application.applicationContext)
+    // **VERWENDE SINGLETON**
+    private val repository = EdupageRepository.getInstance(application.applicationContext)
 
     private val _loginResult = MutableLiveData<Result<Boolean>>()
     val loginResult: LiveData<Result<Boolean>> = _loginResult
 
     fun login(user: String, pass: String) {
         viewModelScope.launch {
-            // Die komplexe Logik ist jetzt im Repository, der Aufruf bleibt einfach.
             val result = repository.login(user, pass)
             _loginResult.postValue(result)
         }

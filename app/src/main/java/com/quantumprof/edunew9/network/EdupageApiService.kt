@@ -1,8 +1,10 @@
 package com.quantumprof.edunew9.network
 
 import com.google.gson.JsonObject
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -33,6 +35,15 @@ interface EdupageApiService {
 
     @GET("/rpr/server/maindbi.js?__func=mainDBIAccessor")
     suspend fun getMainDbi(): Response<ResponseBody>
+
+    @POST("/rpr/server/maindbi.js?__func=mainDBIAccessor")
+    suspend fun getMainDbiWithPost(@Body requestBody: RequestBody): Response<ResponseBody>
+
+    @FormUrlEncoded
+    @POST("/rpr/server/maindbi.js?__func=mainDBIAccessor")
+    suspend fun getMainDbiWithPost(
+        @Field("__gsh") gsechash: String
+    ): Response<ResponseBody>
 
     // 2. Holt die aktuelle Stundenplan-Versionsnummer (tt_num)
     @GET("/timetable/server/currenttt.js?__func=curentttGetData")

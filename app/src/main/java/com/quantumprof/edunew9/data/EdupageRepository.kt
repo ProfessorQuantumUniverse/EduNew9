@@ -15,15 +15,32 @@ import com.google.gson.Gson
 import retrofit2.Response
 import okhttp3.ResponseBody
 
-class EdupageRepository(private val context: Context? = null) {
+class EdupageRepository private constructor(private val context: Context? = null) {
     private val apiService = ApiClient.instance
 
     private var loggedInHtmlCache: String? = null
 
-    private var gsechash: String? = null
+    // **SINGLETON PATTERN**
+    companion object {
+        @Volatile
+        private var INSTANCE: EdupageRepository? = null
+
+        fun getInstance(context: Context? = null): EdupageRepository {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: EdupageRepository(context).also { INSTANCE = it }
+            }
+        }
+
+        // Hilfsmethode für Kompatibilität
+        fun getInstance(): EdupageRepository {
+            return INSTANCE ?: throw IllegalStateException("EdupageRepository muss zuerst mit Context initialisiert werden")
+        }
+    }
 
     suspend fun login(user: String, pass: String): Result<Boolean> {
         return try {
+            Log.d("EdupageLogin", "=== LOGIN GESTARTET ===")
+
             val pageResponse = apiService.getLoginPage()
             if (!pageResponse.isSuccessful || pageResponse.body() == null) {
                 return Result.failure(Exception("Konnte Login-Seite nicht laden: ${pageResponse.code()}"))
@@ -40,39 +57,29 @@ class EdupageRepository(private val context: Context? = null) {
                 return Result.failure(Exception("Login fehlgeschlagen: ${loginResponse.code()}"))
             }
 
-            // --- HIER IST DIE KORREKTUR ---
-            // 1. LESE DEN BODY GENAU EINMAL und speichere ihn in einer lokalen Variable.
             val responseHtml = loginResponse.body()!!.string()
 
-            // 2. Speichere diese lokale Variable im Cache für spätere Verwendung (Stundenplan).
+            // **KRITISCH**: HTML-Cache in der SINGLETON-INSTANZ speichern
             loggedInHtmlCache = responseHtml
+            Log.d("EdupageLogin", "HTML-Cache gespeichert: ${responseHtml.length} Zeichen")
+            Log.d("EdupageLogin", "HTML enthält 'userhome': ${responseHtml.contains("userhome")}")
 
-            // 3. Verwende DIESELBE LOKALE VARIABLE, um den Hash zu extrahieren.
             val finalHash = extractGsecHash(responseHtml)
-            // --- ENDE DER KORREKTUR ---
-
             if (finalHash != null) {
                 SessionManager.gsechash = finalHash
-                Log.d("EdupageLogin", "Finaler gsechash nach Login: $finalHash")
+                Log.d("EdupageLogin", "=== LOGIN ERFOLGREICH ===")
+                Log.d("EdupageLogin", "Finaler gsechash: $finalHash")
+                Log.d("EdupageLogin", "HTML-Cache Status: ${loggedInHtmlCache != null}")
                 Result.success(true)
             } else {
-                // Jetzt prüfen wir den Inhalt des gecachten HTMLs auf die Fehlermeldung
-                if (finalHash != null) {
-                    this.gsechash = finalHash
-                    SessionManager.gsechash = finalHash // Auch im SessionManager für andere Aufrufe
-                    Log.d("EdupageLogin", "Login erfolgreich. Finaler gsechash: $finalHash")
-                    Result.success(true)
-                } else {
-                    Result.failure(Exception("Login OK, aber finaler Token fehlt."))}
+                Result.failure(Exception("Login OK, aber finaler Token fehlt."))
             }
         } catch (e: Exception) {
-            loggedInHtmlCache = null // Bei Fehler Cache leeren
+            loggedInHtmlCache = null
+            Log.e("EdupageLogin", "Login-Fehler", e)
             Result.failure(e)
         }
     }
-
-
-
 
     private fun extractGsecHash(html: String): String? {
         val pattern = Pattern.compile("ASC\\.gsechash\\s*=\\s*\"(.*?)\";")
@@ -120,143 +127,117 @@ class EdupageRepository(private val context: Context? = null) {
     }
 
     suspend fun getTimetableForDate(date: Date): Result<List<TimetableEntry>> {
-        val hash = this.gsechash ?: return Result.failure(Exception("Nicht eingeloggt."))
-        val gson = Gson()
+        Log.d("TimetableFlow", "=== STUNDENPLAN-ABRUF GESTARTET ===")
+        Log.d("TimetableFlow", "Datum: $date")
+        Log.d("TimetableFlow", "Repository-Instanz: ${this.hashCode()}")
+
+        val hash = SessionManager.gsechash
+        if (hash == null) {
+            Log.e("TimetableFlow", "Kein gsechash verfügbar")
+            return Result.failure(Exception("Nicht eingeloggt (kein Security-Token vorhanden)."))
+        }
+        Log.d("TimetableFlow", "gsechash verfügbar: ${hash.take(10)}...")
+
+        // **DEBUGGING**: Status des HTML-Caches
+        val htmlCache = this.loggedInHtmlCache
+        Log.d("TimetableFlow", "HTML-Cache Status:")
+        Log.d("TimetableFlow", "  - Cache verfügbar: ${htmlCache != null}")
+        Log.d("TimetableFlow", "  - Cache Länge: ${htmlCache?.length ?: 0}")
+
+        if (htmlCache == null) {
+            Log.e("TimetableFlow", "KRITISCHER FEHLER: Kein HTML-Cache in Repository-Instanz ${this.hashCode()}")
+            return Result.failure(Exception("Kein Login-HTML-Cache verfügbar. Repository-Problem!"))
+        }
 
         try {
-            // SCHRITT A: Hole das "Wörterbuch" (DBI)
-            val dbiResponse = apiService.getMainDbi()
-            val dbiJson = extractJsonFromResponse(dbiResponse, "mainDBIAccessor")
-                ?: return Result.failure(Exception("DBI-Daten konnten nicht extrahiert werden."))
-            val dbiData = gson.fromJson(dbiJson, JsonObject::class.java)
-            val dbi = dbiData.getAsJsonObject("dbi") ?: return Result.failure(Exception("DBI-Objekt nicht gefunden."))
+            Log.d("TimetableFlow", "Starte HTML-Parsing...")
 
-            val subjects = parseDbiMap(dbi.getAsJsonObject("subjects"))
-            val teachers = parseDbiMap(dbi.getAsJsonObject("teachers"))
-            val classrooms = parseDbiMap(dbi.getAsJsonObject("classrooms"))
-            val periodsMap = parseDbiMap(dbi.getAsJsonObject("periods"), useShort = false)
-            Log.d("TimetableFlow", "Schritt A: DBI-Daten erfolgreich geladen.")
+            val timetableEntries = parseTimetableFromLoginHtml(htmlCache, date)
 
-            // SCHRITT B: Hole die aktuelle Stundenplan-Version (tt_num)
-            val currentTtResponse = apiService.getCurrentTimetableData()
-            val currentTtJson = extractJsonFromResponse(currentTtResponse, "curentttGetData")
-                ?: return Result.failure(Exception("Stundenplan-Metadaten konnten nicht extrahiert werden."))
-            val currentTtData = gson.fromJson(currentTtJson, JsonObject::class.java)
-            val ttNum = currentTtData.get("tt_num")?.asInt
-                ?: return Result.failure(Exception("Stundenplan-Versionsnummer (tt_num) nicht gefunden."))
-            Log.d("TimetableFlow", "Schritt B: Stundenplan-Version ist $ttNum.")
-
-            // SCHRITT C: Hole die Stundenplan-Einträge für die Woche
-            val formattedDateForApi = SimpleDateFormat("yyyy-MM-dd", Locale.GERMANY).format(date)
-            val viewerResponse = apiService.getTimetableViewerData(formattedDateForApi, ttNum, hash)
-            val viewerJson = extractJsonFromResponse(viewerResponse, "getTTViewerData")
-                ?: return Result.failure(Exception("Stundenplan-Einträge konnten nicht extrahiert werden."))
-            val viewerData = gson.fromJson(viewerJson, JsonObject::class.java)
-
-            // Die Daten sind in einem verschachtelten 'data'-Objekt
-            val dataObject = viewerData.getAsJsonObject("data")
-            val timetableItems = mutableListOf<JsonObject>()
-            // Iteriere über alle Tage der Woche, die in der Antwort enthalten sind
-            dataObject.entrySet().forEach { dayEntry ->
-                dayEntry.value.asJsonObject.getAsJsonArray("tt_items")?.forEach { item ->
-                    timetableItems.add(item.asJsonObject)
-                }
+            if (timetableEntries.isNotEmpty()) {
+                Log.d("TimetableFlow", "=== STUNDENPLAN ERFOLGREICH ===")
+                Log.d("TimetableFlow", "Anzahl Einträge: ${timetableEntries.size}")
+                return Result.success(timetableEntries)
+            } else {
+                Log.d("TimetableFlow", "=== KEIN STUNDENPLAN FÜR HEUTE ===")
+                return Result.success(emptyList())
             }
-            Log.d("TimetableFlow", "Schritt C: ${timetableItems.size} Stundenplan-Einträge für die Woche gefunden.")
-
-            // Verarbeite die Einträge für den angeforderten Tag
-            val entriesForDate = timetableItems.filter {
-                it.get("date")?.asString == formattedDateForApi
-            }
-
-            val timetableEntries = mutableListOf<TimetableEntry>()
-            for (item in entriesForDate) {
-                val periodNum = item.get("period")?.asString ?: continue
-
-                timetableEntries.add(
-                    TimetableEntry(
-                        period = periodsMap[periodNum] ?: periodNum,
-                        startTime = item.get("starttime")?.asString ?: "",
-                        endTime = item.get("endtime")?.asString ?: "",
-                        subject = subjects[item.get("subjectid")?.asString] ?: "Unbekannt",
-                        teacher = teachers[item.getAsJsonArray("teacherids")?.firstOrNull()?.asString] ?: "",
-                        room = classrooms[item.getAsJsonArray("classroomids")?.firstOrNull()?.asString?.replace("*", "")] ?: "",
-                        type = item.get("subst_info")?.asString?.trim()?.ifEmpty { "Stunde" } ?: "Stunde"
-                    )
-                )
-            }
-            val finalEntries = timetableEntries.distinctBy { it.period + it.subject }.sortedBy { it.startTime }
-            Log.i("TimetableFlow", "ERFOLG! ${finalEntries.size} Einträge für $formattedDateForApi extrahiert.")
-            return Result.success(finalEntries)
 
         } catch (e: Exception) {
-            Log.e("TimetableFlow", "Ein schwerwiegender Fehler ist im API-Datenfluss aufgetreten.", e)
+            Log.e("TimetableFlow", "Fehler beim HTML-Parsing", e)
             return Result.failure(e)
         }
     }
 
-    // Hilfsfunktion, um das JSON aus der JavaScript-Callback-Wrapper zu extrahieren
-    private fun extractJsonFromResponse(response: Response<ResponseBody>, functionName: String): String? {
-        if (!response.isSuccessful) return null
-        val body = response.body()?.string() ?: return null
-        val pattern = Pattern.compile("d\\['$functionName'\\]\\s*=\\s*(\\{.*\\});", Pattern.DOTALL)
-        val matcher = pattern.matcher(body)
-        return if (matcher.find()) matcher.group(1) else null
-    }
-
     private fun parseTimetableFromLoginHtml(html: String, date: Date): List<TimetableEntry> {
-        Log.d("TimetableParser", "Beginne mit dem Parsen des Stundenplans.")
+        Log.d("TimetableParser", "=== HTML-PARSING GESTARTET ===")
+        Log.d("TimetableParser", "HTML Länge: ${html.length}")
 
-        // 1. Robusterer Regex, der nicht zu "gierig" ist und beim ersten "});" stoppt.
         val pattern = Pattern.compile("\\.userhome\\((.*?)\\);\\s*\\}\\);", Pattern.DOTALL)
         val matcher = pattern.matcher(html)
         if (!matcher.find()) {
-            Log.e("TimetableParser", "Konnte den 'userhome' JSON-Block nicht finden. Regex hat versagt.")
+            Log.e("TimetableParser", "FEHLER: Konnte 'userhome' JSON-Block nicht finden")
+            Log.d("TimetableParser", "HTML Anfang: ${html.take(500)}")
             return emptyList()
         }
-        Log.d("TimetableParser", "Userhome-Block gefunden.")
+        Log.d("TimetableParser", "✓ Userhome-Block gefunden")
 
         val userhomeJson = matcher.group(1) ?: return emptyList()
+        Log.d("TimetableParser", "JSON Länge: ${userhomeJson.length}")
+
         val gson = Gson()
         val data: JsonObject = try {
             gson.fromJson(userhomeJson, JsonObject::class.java)
         } catch (e: Exception) {
-            Log.e("TimetableParser", "JSON-Parsing des Userhome-Blocks fehlgeschlagen.", e)
+            Log.e("TimetableParser", "FEHLER: JSON-Parsing fehlgeschlagen", e)
+            Log.d("TimetableParser", "JSON Anfang: ${userhomeJson.take(200)}")
             return emptyList()
         }
-        Log.d("TimetableParser", "Userhome-Block erfolgreich als JSON geparst.")
+        Log.d("TimetableParser", "✓ JSON erfolgreich geparst")
 
-        // 2. Erstelle die ID-zu-Name-Maps aus dem DBI-Objekt
         val dbi = data.getAsJsonObject("dbi")
         if (dbi == null) {
-            Log.e("TimetableParser", "DBI-Objekt im JSON nicht gefunden.")
+            Log.e("TimetableParser", "FEHLER: Kein DBI-Objekt im JSON")
             return emptyList()
         }
+        Log.d("TimetableParser", "✓ DBI-Objekt gefunden")
+
         val subjects = parseDbiMap(dbi.getAsJsonObject("subjects"))
         val teachers = parseDbiMap(dbi.getAsJsonObject("teachers"))
         val classrooms = parseDbiMap(dbi.getAsJsonObject("classrooms"))
         val periodsMap = parseDbiMap(dbi.getAsJsonObject("periods"), useShort = false)
-        Log.d("TimetableParser", "DBI-Maps (Lehrer, Fächer, etc.) erfolgreich erstellt.")
+        Log.d("TimetableParser", "✓ DBI-Maps erstellt: ${subjects.size} Fächer, ${teachers.size} Lehrer")
 
-        // 3. Finde den Plan für das angeforderte Datum
         val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.GERMANY).format(date)
+        Log.d("TimetableParser", "Suche Plan für Datum: $formattedDate")
+
         val dailyPlan = data.getAsJsonObject("dp")
             ?.getAsJsonObject("dates")
             ?.getAsJsonObject(formattedDate)
             ?.getAsJsonArray("plan")
 
         if (dailyPlan == null) {
-            Log.d("TimetableParser", "Kein Stundenplan ('plan'-Array) für das Datum $formattedDate gefunden.")
+            Log.d("TimetableParser", "ℹ Kein Plan für $formattedDate gefunden")
+
+            // **DEBUGGING**: Zeige verfügbare Daten
+            val dp = data.getAsJsonObject("dp")
+            if (dp != null) {
+                val dates = dp.getAsJsonObject("dates")
+                if (dates != null) {
+                    Log.d("TimetableParser", "Verfügbare Daten für Daten:")
+                    dates.entrySet().take(5).forEach { entry ->
+                        Log.d("TimetableParser", "  - ${entry.key}")
+                    }
+                }
+            }
             return emptyList()
         }
-        Log.d("TimetableParser", "Stundenplan für $formattedDate gefunden. ${dailyPlan.size()} Einträge gefunden.")
+        Log.d("TimetableParser", "✓ Tagesplan gefunden: ${dailyPlan.size()} Einträge")
 
-        // 4. Gehe jeden Eintrag durch und baue das TimetableEntry-Objekt
         val timetableEntries = mutableListOf<TimetableEntry>()
         for (planElement in dailyPlan) {
             val planObject = planElement.asJsonObject
 
-            // Überspringe leere Einträge, Pausen oder Termine ohne Fach
             if (!planObject.has("subjectid") || planObject.get("subjectid").asString.isNullOrEmpty()) {
                 continue
             }
@@ -273,10 +254,8 @@ class EdupageRepository(private val context: Context? = null) {
             val teacherName = teachers[teacherId] ?: ""
 
             val classroomId = planObject.getAsJsonArray("classroomids")?.firstOrNull()?.asString
-            // Das Sternchen (*) bei manchen Raum-IDs entfernen
             val classroomName = classrooms[classroomId?.replace("*", "")] ?: ""
 
-            // Prüfen, ob die Stunde ausfällt (basierend auf dem "changes"-Array)
             val changes = planObject.getAsJsonArray("changes")
             var type = "Stunde"
             if (changes != null && changes.toString().contains("cancelled")) {
@@ -296,31 +275,21 @@ class EdupageRepository(private val context: Context? = null) {
             )
         }
 
-        // Korrigierte Logik zum Entfernen von Duplikaten:
-        // Gruppiere nach Stunde und füge die Informationen zusammen, falls sie sich unterscheiden.
         val finalEntries = timetableEntries
             .groupBy { it.period }
-            .map { (_, entries) ->
-                if (entries.size > 1) {
-                    // Wenn es mehrere Einträge für eine Stunde gibt (z.B. verschiedene Gruppen),
-                    // nehmen wir den ersten als Basis. Man könnte hier auch komplexere Logik einbauen.
-                    entries.first()
-                } else {
-                    entries.first()
-                }
-            }
+            .map { (_, entries) -> entries.first() }
+            .sortedBy { it.startTime }
 
-        Log.d("TimetableParser", "Parsing beendet. ${finalEntries.size} finale Einträge werden zurückgegeben.")
+        Log.d("TimetableParser", "=== PARSING BEENDET ===")
+        Log.d("TimetableParser", "Finale Einträge: ${finalEntries.size}")
         return finalEntries
     }
-
 
     private fun parseDbiMap(obj: JsonObject?, useShort: Boolean = true): Map<String, String> {
         if (obj == null) return emptyMap()
         val map = mutableMapOf<String, String>()
         for (entry in obj.entrySet()) {
             val item = entry.value.asJsonObject
-            // Name bevorzugen, da "short" manchmal fehlt oder nicht aussagekräftig ist.
             val name = item.get("name")?.asString
             if (!name.isNullOrEmpty()) {
                 map[entry.key] = name
@@ -331,21 +300,18 @@ class EdupageRepository(private val context: Context? = null) {
 
     private fun parseSubstitutionHtml(html: String): List<SubstitutionEntry> {
         val entries = mutableListOf<SubstitutionEntry>()
-        // 1. Finde den "report_html" String im JavaScript-Block
         val pattern = Pattern.compile("\"report_html\":\\s*\"(.*?)\"\\}\\);")
-        val matcher = pattern.matcher(html.replace("\n", "")) // Zeilenumbrüche entfernen für einfacheres Regex
+        val matcher = pattern.matcher(html.replace("\n", ""))
         if (!matcher.find()) {
             Log.e("Parser", "Konnte den 'report_html' Block nicht finden.")
             return entries
         }
 
-        // 2. Extrahiere und dekodiere den inneren HTML-String
         var innerHtmlString = matcher.group(1) ?: return entries
         innerHtmlString = innerHtmlString.replace("\\\"", "\"").replace("\\/", "/")
 
-        // 3. Parse das innere HTML mit JSoup
         val doc = Jsoup.parse(innerHtmlString)
-        val rows = doc.select(".row") // Wähle alle Elemente mit der Klasse "row"
+        val rows = doc.select(".row")
 
         for (row in rows) {
             val period = row.select(".period span").text()

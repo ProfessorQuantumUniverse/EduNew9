@@ -1,47 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="8dp"
-    android:layout_marginTop="4dp"
-    android:layout_marginEnd="8dp"
-    android:layout_marginBottom="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardCornerRadius="20dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <TextView
-            android:id="@+id/tv_substitution_type"
-            android:layout_width="wrap_content"
+        <!-- Header mit Typ-Badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Änderung"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:textColor="@color/purple_700"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/tv_substitution_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="5. FS"
-            android:textSize="14sp" />
+            <!-- Typ Badge -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_substitution_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Entfällt"
+                android:textSize="12sp"
+                android:textColor="@color/substitution_cancelled_text"
+                app:chipBackgroundColor="@color/substitution_cancelled"
+                app:chipStrokeWidth="0dp"
+                app:chipMinHeight="28dp"
+                app:textStartPadding="12dp"
+                app:textEndPadding="12dp"
+                style="@style/Widget.Material3.Chip.Filter"
+                tools:text="Entfällt" />
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Stunden-Info -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/rounded_background_primary"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_schedule_24"
+                    android:layout_marginEnd="6dp"
+                    app:tint="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/tv_substitution_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:fontFamily="@font/inter_semibold"
+                    tools:text="1. - 2. Stunde" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Info Text -->
         <TextView
             android:id="@+id/tv_substitution_info"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Gruppe B: Eurythmie - Lehrkraft: Völker, +Zuccoli-Saal"
-            android:textSize="16sp"
-            android:textColor="@android:color/black"/>
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:lineSpacingExtra="4dp"
+            android:fontFamily="@font/inter_regular"
+            tools:text="Geschichte Epoche - Geschichte, Herr Dörr • Raum 201" />
+
+        <!-- Divider mit Gradient -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/gradient_divider" />
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
