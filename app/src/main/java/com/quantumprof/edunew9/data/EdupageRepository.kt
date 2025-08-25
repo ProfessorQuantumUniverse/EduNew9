@@ -31,7 +31,6 @@ class EdupageRepository private constructor(private val context: Context? = null
             }
         }
 
-        // Hilfsmethode für Kompatibilität
         fun getInstance(): EdupageRepository {
             return INSTANCE ?: throw IllegalStateException("EdupageRepository muss zuerst mit Context initialisiert werden")
         }
@@ -59,7 +58,6 @@ class EdupageRepository private constructor(private val context: Context? = null
 
             val responseHtml = loginResponse.body()!!.string()
 
-            // **KRITISCH**: HTML-Cache in der SINGLETON-INSTANZ speichern
             loggedInHtmlCache = responseHtml
             Log.d("EdupageLogin", "HTML-Cache gespeichert: ${responseHtml.length} Zeichen")
             Log.d("EdupageLogin", "HTML enthält 'userhome': ${responseHtml.contains("userhome")}")
@@ -91,21 +89,6 @@ class EdupageRepository private constructor(private val context: Context? = null
         }
     }
 
-    private fun copyHtmlToClipboard(htmlContent: String) {
-        try {
-            context?.let {
-                val clipboard = it.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("EduPage HTML Response", htmlContent)
-                clipboard.setPrimaryClip(clip)
-                Log.d("EdupageRepository", "HTML content copied to clipboard (${htmlContent.length} characters)")
-            } ?: run {
-                Log.w("EdupageRepository", "Context is null, cannot copy to clipboard")
-            }
-        } catch (e: Exception) {
-            Log.e("EdupageRepository", "Failed to copy HTML to clipboard", e)
-        }
-    }
-
     suspend fun getSubstitutionPlanForDate(date: Date): Result<List<SubstitutionEntry>> {
         val hash = SessionManager.gsechash
             ?: return Result.failure(Exception("Nicht eingeloggt (kein Security-Token vorhanden)."))
@@ -126,6 +109,7 @@ class EdupageRepository private constructor(private val context: Context? = null
         }
     }
 
+    // **ERWEITERTE STUNDENPLAN-METHODE MIT GRUPPENFILTER**
     suspend fun getTimetableForDate(date: Date): Result<List<TimetableEntry>> {
         Log.d("TimetableFlow", "=== STUNDENPLAN-ABRUF GESTARTET ===")
         Log.d("TimetableFlow", "Datum: $date")
@@ -138,7 +122,6 @@ class EdupageRepository private constructor(private val context: Context? = null
         }
         Log.d("TimetableFlow", "gsechash verfügbar: ${hash.take(10)}...")
 
-        // **DEBUGGING**: Status des HTML-Caches
         val htmlCache = this.loggedInHtmlCache
         Log.d("TimetableFlow", "HTML-Cache Status:")
         Log.d("TimetableFlow", "  - Cache verfügbar: ${htmlCache != null}")
@@ -152,12 +135,17 @@ class EdupageRepository private constructor(private val context: Context? = null
         try {
             Log.d("TimetableFlow", "Starte HTML-Parsing...")
 
-            val timetableEntries = parseTimetableFromLoginHtml(htmlCache, date)
+            val allTimetableEntries = parseTimetableFromLoginHtml(htmlCache, date)
 
-            if (timetableEntries.isNotEmpty()) {
+            // **NEUE GRUPPENFILTERUNG FÜR STUNDENPLAN ANWENDEN**
+            val filteredEntries = context?.let { ctx ->
+                applyTimetableGroupFilter(allTimetableEntries, ctx)
+            } ?: allTimetableEntries
+
+            if (filteredEntries.isNotEmpty()) {
                 Log.d("TimetableFlow", "=== STUNDENPLAN ERFOLGREICH ===")
-                Log.d("TimetableFlow", "Anzahl Einträge: ${timetableEntries.size}")
-                return Result.success(timetableEntries)
+                Log.d("TimetableFlow", "Anzahl Einträge: ${filteredEntries.size}")
+                return Result.success(filteredEntries)
             } else {
                 Log.d("TimetableFlow", "=== KEIN STUNDENPLAN FÜR HEUTE ===")
                 return Result.success(emptyList())
@@ -169,6 +157,165 @@ class EdupageRepository private constructor(private val context: Context? = null
         }
     }
 
+    // **VERBESSERTE GRUPPENFILTER-FUNKTION FÜR STUNDENPLAN**
+    private fun applyTimetableGroupFilter(entries: List<TimetableEntry>, context: Context): List<TimetableEntry> {
+        val selectedGroup = SettingsManager.getSelectedGroup(context)
+        val autoFilter = SettingsManager.getAutoFilter(context)
+        val selectedElective = SettingsManager.getSelectedElective(context)
+        val autoFilterElectives = SettingsManager.getAutoFilterElectives(context)
+
+        Log.d("TimetableGroupFilter", "=== FILTER-DEBUG ===")
+        Log.d("TimetableGroupFilter", "Angewählte Gruppe: '$selectedGroup'")
+        Log.d("TimetableGroupFilter", "Auto-Filter aktiviert: $autoFilter")
+        Log.d("TimetableGroupFilter", "Angewählter Wahlkurs: '$selectedElective'")
+        Log.d("TimetableGroupFilter", "Auto-Filter Wahlkurse aktiviert: $autoFilterElectives")
+        Log.d("TimetableGroupFilter", "Stundenplan-Einträge vor Filterung: ${entries.size}")
+
+        // **ERWEITERTE DEBUG-INFORMATIONEN**
+        entries.forEachIndexed { index, entry ->
+            Log.d("TimetableGroupFilter", "  [$index] ${entry.period}: '${entry.subject}' (Gruppe: ${entry.detectedGroup}, Gruppen: ${entry.groupNames})")
+        }
+
+        // **SCHRITT 1: GRUPPEN-FILTERUNG (A/B)**
+        val groupFilteredEntries = if (autoFilter && selectedGroup != null) {
+            applyGroupFilter(entries, selectedGroup)
+        } else {
+            Log.d("TimetableGroupFilter", "⚠ Gruppen-Filter deaktiviert oder keine Gruppe gewählt")
+            entries
+        }
+
+        // **SCHRITT 2: WAHLKURS-FILTERUNG**
+        val finalFilteredEntries = if (autoFilterElectives && selectedElective != null) {
+            applyElectiveFilter(groupFilteredEntries, selectedElective)
+        } else {
+            Log.d("TimetableGroupFilter", "⚠ Wahlkurs-Filter deaktiviert oder kein Wahlkurs gewählt")
+            groupFilteredEntries
+        }
+
+        Log.d("TimetableGroupFilter", "=== FILTER-ERGEBNIS ===")
+        Log.d("TimetableGroupFilter", "Einträge nach Filterung: ${finalFilteredEntries.size}")
+        finalFilteredEntries.forEach { entry ->
+            Log.d("TimetableGroupFilter", "  → ${entry.period}: '${entry.subject}' (Gruppe: ${entry.detectedGroup})")
+        }
+
+        return finalFilteredEntries.sortedBy { it.startTime }
+    }
+
+    // **GRUPPEN-FILTERUNG (A/B) - AUSGELAGERT**
+    private fun applyGroupFilter(entries: List<TimetableEntry>, selectedGroup: String): List<TimetableEntry> {
+        Log.d("TimetableGroupFilter", "✓ Gruppen-Filter wird angewendet für Gruppe '$selectedGroup'")
+
+        val entriesByPeriod = entries.groupBy { it.period }
+        val filteredEntries = mutableListOf<TimetableEntry>()
+
+        for ((period, periodEntries) in entriesByPeriod) {
+            Log.d("TimetableGroupFilter", "Verarbeite Periode: $period mit ${periodEntries.size} Einträgen")
+
+            // Sammle ausgefallene Stunden in dieser Periode separat (dürfen nie verschwinden)
+            val cancelledEntries = periodEntries.filter { it.type == "Entfällt" }
+            if (cancelledEntries.isNotEmpty()) {
+                Log.d("TimetableGroupFilter", "  → ${cancelledEntries.size} ausgefallene(r) Eintrag/Einträge gefunden: ${cancelledEntries.map { it.subject }}")
+            }
+
+            if (periodEntries.size == 1) {
+                val entry = periodEntries.first()
+
+                if (entry.type == "Entfällt") {
+                    // Ausgefallene Stunde immer anzeigen
+                    filteredEntries.add(entry)
+                    Log.d("TimetableGroupFilter", "  ✓ (Entfällt) Einzeleintrag aufgenommen: '${entry.subject}'")
+                } else if (entry.detectedGroup == null || entry.detectedGroup == selectedGroup) {
+                    filteredEntries.add(entry)
+                    Log.d("TimetableGroupFilter", "  ✓ Einzeleintrag passend: '${entry.subject}' (Gruppe: ${entry.detectedGroup})")
+                } else {
+                    Log.d("TimetableGroupFilter", "  ✗ Einzeleintrag herausgefiltert: '${entry.subject}' (Gruppe: ${entry.detectedGroup} ≠ $selectedGroup)")
+                }
+            } else {
+                Log.d("TimetableGroupFilter", "  Mehrere Einträge für Periode $period:")
+                periodEntries.forEach { entry ->
+                    Log.d("TimetableGroupFilter", "    - '${entry.subject}' (Typ: ${entry.type}, Gruppe: ${entry.detectedGroup}, Gruppen: ${entry.groupNames})")
+                }
+
+                val selectedGroupEntry = periodEntries.find { entry ->
+                    entry.detectedGroup == selectedGroup && entry.type != "Entfällt"
+                }
+
+                if (selectedGroupEntry != null) {
+                    filteredEntries.add(selectedGroupEntry)
+                    Log.d("TimetableGroupFilter", "  ✓ Ausgewählte Gruppe gefunden: '${selectedGroupEntry.subject}'")
+                } else {
+                    val commonEntries = periodEntries.filter { entry ->
+                        entry.detectedGroup == null && entry.type != "Entfällt"
+                    }
+
+                    if (commonEntries.isNotEmpty()) {
+                        filteredEntries.addAll(commonEntries)
+                        Log.d("TimetableGroupFilter", "  ✓ Gemeinsame Stunden: ${commonEntries.map { it.subject }}")
+                    } else {
+                        // Fallback nur wenn keine normalen Einträge außer Entfall vorhanden
+                        val fallbackEntry = periodEntries.firstOrNull { it.type != "Entfällt" }
+                        if (fallbackEntry != null) {
+                            filteredEntries.add(fallbackEntry)
+                            Log.d("TimetableGroupFilter", "  ⚠ Fallback: '${fallbackEntry.subject}' (keine passende Gruppe gefunden)")
+                        }
+                    }
+                }
+            }
+
+            // Stelle sicher, dass ALLE ausgefallenen Stunden ebenfalls (zusätzlich) angezeigt werden
+            cancelledEntries.forEach { cancelled ->
+                if (!filteredEntries.contains(cancelled)) {
+                    filteredEntries.add(cancelled)
+                    Log.d("TimetableGroupFilter", "  ✓ (Entfällt) zusätzlich hinzugefügt: '${cancelled.subject}'")
+                }
+            }
+        }
+
+        Log.d("TimetableGroupFilter", "Nach Gruppen-Filter: ${filteredEntries.size} Einträge (inkl. Entfälle)")
+        return filteredEntries
+    }
+
+    // **WAHLKURS-FILTERUNG (ORCHESTER/KUNSTWERKSTATT/OBERSTUFENCHOR)**
+    private fun applyElectiveFilter(entries: List<TimetableEntry>, selectedElective: String): List<TimetableEntry> {
+        Log.d("TimetableGroupFilter", "✓ Wahlkurs-Filter wird angewendet für '$selectedElective'")
+
+        val availableElectives = SettingsManager.getAvailableElectives()
+        Log.d("TimetableGroupFilter", "Verfügbare Wahlkurse: $availableElectives")
+
+        val filteredEntries = entries.filter { entry ->
+            // Ausgefallene Stunden nie herausfiltern
+            if (entry.type == "Entfällt") {
+                Log.d("TimetableGroupFilter", "  ✓ (Entfällt) nicht gefiltert: '${entry.subject}'")
+                return@filter true
+            }
+
+            val isSelectedElective = entry.subject.contains(selectedElective, ignoreCase = true)
+            val isOtherElective = availableElectives.any { elective ->
+                elective != selectedElective && entry.subject.contains(elective, ignoreCase = true)
+            }
+
+            val shouldInclude = when {
+                isSelectedElective -> {
+                    Log.d("TimetableGroupFilter", "  ✓ Ausgewählter Wahlkurs: '${entry.subject}'")
+                    true
+                }
+                isOtherElective -> {
+                    Log.d("TimetableGroupFilter", "  ✗ Anderer Wahlkurs herausgefiltert: '${entry.subject}'")
+                    false
+                }
+                else -> {
+                    Log.d("TimetableGroupFilter", "  ✓ Reguläres Fach: '${entry.subject}'")
+                    true
+                }
+            }
+            shouldInclude
+        }
+
+        Log.d("TimetableGroupFilter", "Nach Wahlkurs-Filter: ${filteredEntries.size} Einträge (inkl. Entfälle)")
+        return filteredEntries
+    }
+
+    // **ERWEITERTE STUNDENPLAN-PARSING MIT GRUPPENERKENNUNG**
     private fun parseTimetableFromLoginHtml(html: String, date: Date): List<TimetableEntry> {
         Log.d("TimetableParser", "=== HTML-PARSING GESTARTET ===")
         Log.d("TimetableParser", "HTML Länge: ${html.length}")
@@ -219,7 +366,6 @@ class EdupageRepository private constructor(private val context: Context? = null
         if (dailyPlan == null) {
             Log.d("TimetableParser", "ℹ Kein Plan für $formattedDate gefunden")
 
-            // **DEBUGGING**: Zeige verfügbare Daten
             val dp = data.getAsJsonObject("dp")
             if (dp != null) {
                 val dates = dp.getAsJsonObject("dates")
@@ -256,10 +402,32 @@ class EdupageRepository private constructor(private val context: Context? = null
             val classroomId = planObject.getAsJsonArray("classroomids")?.firstOrNull()?.asString
             val classroomName = classrooms[classroomId?.replace("*", "")] ?: ""
 
+            // **NEUE GRUPPENERKENNUNG FÜR STUNDENPLAN**
+            val groupNamesArray = planObject.getAsJsonArray("groupnames")
+            val groupNames = mutableListOf<String>()
+            if (groupNamesArray != null) {
+                for (element in groupNamesArray) {
+                    groupNames.add(element.asString)
+                }
+            }
+
+            val detectedGroup = detectTimetableGroupFromNames(groupNames, subjectName, teacherName)
+
             val changes = planObject.getAsJsonArray("changes")
             var type = "Stunde"
+
+            // Debug-Logging für ausgefallene Stunden
+            Log.d("TimetableParser", "=== EINTRAG ANALYSIS ===")
+            Log.d("TimetableParser", "Fach: $subjectName")
+            Log.d("TimetableGroupDetection", "Fach: $subjectName, Gruppenamen: $groupNames, Erkannte Gruppe: $detectedGroup")
+            Log.d("TimetableParser", "Changes Array: $changes")
+            Log.d("TimetableParser", "Changes String: ${changes?.toString()}")
+
             if (changes != null && changes.toString().contains("cancelled")) {
                 type = "Entfällt"
+                Log.d("TimetableParser", "✓ ENTFALL ERKANNT für $subjectName")
+            } else {
+                Log.d("TimetableParser", "○ Normale Stunde: $subjectName")
             }
 
             timetableEntries.add(
@@ -270,19 +438,76 @@ class EdupageRepository private constructor(private val context: Context? = null
                     subject = subjectName,
                     teacher = teacherName,
                     room = classroomName,
-                    type = type
+                    type = type,
+                    detectedGroup = detectedGroup, // **NEU**
+                    groupNames = groupNames // **NEU**
                 )
             )
         }
 
-        val finalEntries = timetableEntries
-            .groupBy { it.period }
-            .map { (_, entries) -> entries.first() }
-            .sortedBy { it.startTime }
-
+        // **WICHTIG: KEINE VORZEITIGE GRUPPIERUNG MEHR!**
+        // Entferne die vorzeitige Gruppierung, damit die Gruppenfilterung alle Einträge sieht
         Log.d("TimetableParser", "=== PARSING BEENDET ===")
-        Log.d("TimetableParser", "Finale Einträge: ${finalEntries.size}")
-        return finalEntries
+        Log.d("TimetableParser", "Alle Einträge vor Filterung: ${timetableEntries.size}")
+        return timetableEntries.sortedBy { it.startTime }
+    }
+
+    // **NEUE GRUPPENERKENNUNG SPEZIELL FÜR STUNDENPLAN**
+    private fun detectTimetableGroupFromNames(groupNames: List<String>, subject: String, teacher: String): String? {
+        // 1. Direkte Gruppenerkennung aus groupnames
+        for (groupName in groupNames) {
+            val groupPatterns = listOf(
+                Regex(".*Gruppe\\s*([AB]).*", RegexOption.IGNORE_CASE),
+                Regex(".*Gr\\.?\\s*([AB]).*", RegexOption.IGNORE_CASE),
+                Regex(".*\\(([AB])\\).*", RegexOption.IGNORE_CASE),
+                Regex(".*([AB])\\s*-\\s*Gruppe.*", RegexOption.IGNORE_CASE),
+                Regex(".*\\b([AB])\\b.*", RegexOption.IGNORE_CASE),
+                Regex("^([AB])$", RegexOption.IGNORE_CASE)
+            )
+
+            for (pattern in groupPatterns) {
+                val match = pattern.find(groupName)
+                if (match != null) {
+                    val group = match.groupValues[1].uppercase()
+                    return group
+                }
+            }
+        }
+
+        // 2. Gruppenerkennung aus Fachname
+        val subjectGroup = detectGroupFromText(subject)
+        if (subjectGroup != null) {
+            return subjectGroup
+        }
+
+        // 3. Gruppenerkennung aus Lehrername
+        val teacherGroup = detectGroupFromText(teacher)
+        if (teacherGroup != null) {
+            return teacherGroup
+        }
+
+        return null
+    }
+
+    // **HILFSMETHODE FÜR GRUPPENERKENNUNG AUS TEXT**
+    private fun detectGroupFromText(text: String): String? {
+        val groupPatterns = listOf(
+            Regex("Gruppe\\s*([AB])(?:\\s|,|\\.|$)", RegexOption.IGNORE_CASE),
+            Regex("Gr\\.\\s*([AB])(?:\\s|,|\\.|$)", RegexOption.IGNORE_CASE),
+            Regex("([AB])\\s*-\\s*Gruppe", RegexOption.IGNORE_CASE),
+            Regex("\\(([AB])\\)", RegexOption.IGNORE_CASE),
+            Regex("([AB])\\s*Gr", RegexOption.IGNORE_CASE),
+            Regex("\\b([AB])\\s*,", RegexOption.IGNORE_CASE),
+            Regex("\\s([AB])\\s*$", RegexOption.IGNORE_CASE)
+        )
+
+        for (pattern in groupPatterns) {
+            val match = pattern.find(text)
+            if (match != null) {
+                return match.groupValues[1].uppercase()
+            }
+        }
+        return null
     }
 
     private fun parseDbiMap(obj: JsonObject?, useShort: Boolean = true): Map<String, String> {

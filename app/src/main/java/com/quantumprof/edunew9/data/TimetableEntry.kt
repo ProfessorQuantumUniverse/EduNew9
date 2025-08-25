@@ -9,5 +9,7 @@ data class TimetableEntry(
     val subject: String,
     val teacher: String,
     val room: String,
-    val type: String // z.B. "Stunde", "Entfällt", "Änderung"
+    val type: String, // z.B. "Stunde", "Entfällt", "Änderung"
+    val detectedGroup: String? = null, // "A", "B", oder null - NEU HINZUGEFÜGT
+    val groupNames: List<String> = emptyList() // Original groupnames aus JSON - NEU HINZUGEFÜGT
 )

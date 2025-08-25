@@ -32,6 +32,17 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:label="Einstellungen"
+            android:parentActivityName=".ui.main.MainActivity"
+            android:theme="@style/Theme.EduNewFin">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.main.MainActivity" />
+        </activity>
+
 
     </application>
 

@@ -18,6 +18,14 @@
         android:orientation="horizontal"
         android:padding="0dp">
 
+        <!-- Periode-Indikator (linker Rand für Mehrfachstunden) -->
+        <View
+            android:id="@+id/view_period_indicator"
+            android:layout_width="@dimen/period_indicator_width"
+            android:layout_height="match_parent"
+            android:background="@color/double_period_color"
+            android:visibility="gone" />
+
         <!-- Zeit-Bereich (links) -->
         <LinearLayout
             android:layout_width="wrap_content"
@@ -35,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                 android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_bold"
+                android:textStyle="bold"
                 android:textSize="@dimen/text_size_time_large"
                 android:maxLines="1"
                 tools:text="08:00" />
@@ -51,13 +59,12 @@
                 android:id="@+id/tv_end_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_medium"
                 android:textSize="@dimen/text_size_time_small"
                 android:alpha="0.9"
                 android:maxLines="1"
-                tools:text="08:45" />
+                tools:text="09:30" />
 
             <TextView
                 android:id="@+id/tv_period"
@@ -65,12 +72,11 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
                 android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_medium"
+                android:textSize="10sp"
                 android:alpha="0.8"
                 android:layout_marginTop="2dp"
-                android:textSize="10sp"
                 android:maxLines="1"
-                tools:text="1. Std" />
+                tools:text="1-2. Std" />
 
         </LinearLayout>
 
@@ -80,10 +86,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:padding="@dimen/card_padding"
-            android:layout_gravity="center_vertical">
+            android:padding="@dimen/card_padding">
 
-            <!-- Fach-Header -->
+            <!-- Header mit Fach und Status -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -98,51 +103,51 @@
                     android:layout_weight="1"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                     android:textColor="?attr/colorOnSurface"
-                    android:fontFamily="@font/inter_semibold"
+                    android:textStyle="bold"
                     android:textSize="@dimen/text_size_subject"
                     android:maxLines="2"
                     android:ellipsize="end"
                     android:lineSpacingMultiplier="1.1"
                     tools:text="Mathematik" />
 
-                <!-- Status Icon -->
+                <!-- Dauer-Indikator für Mehrfachstunden -->
+                <TextView
+                    android:id="@+id/tv_duration_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/duration_indicator_background"
+                    android:paddingHorizontal="@dimen/duration_badge_padding_horizontal"
+                    android:paddingVertical="@dimen/duration_badge_padding_vertical"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:visibility="gone"
+                    android:maxLines="1"
+                    tools:text="Doppelstunde"
+                    tools:visibility="visible" />
+
                 <ImageView
                     android:id="@+id/iv_status"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="8dp"
                     android:src="@drawable/ic_check_circle_24"
-                    app:tint="@color/substitution_event_text"
-                    android:layout_marginStart="6dp"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                    android:contentDescription="Status"
+                    app:tint="?attr/colorPrimary"
+                    tools:src="@drawable/ic_check_circle_24" />
 
             </LinearLayout>
 
-            <!-- **NEU: Gruppeninformation** -->
-            <TextView
-                android:id="@+id/tv_group_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                android:textColor="?attr/colorOnSecondaryContainer"
-                android:background="@drawable/rounded_background_secondary"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:layout_marginBottom="6dp"
-                android:textSize="11sp"
-                android:visibility="gone"
-                android:maxLines="1"
-                tools:text="Gruppe A"
-                tools:visibility="visible" />
-
-            <!-- Lehrer und Raum -->
+            <!-- Lehrer und Raum Informationen -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
-                <!-- Lehrer -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -155,8 +160,9 @@
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_person_24"
-                        app:tint="?attr/colorOnSurfaceVariant"
-                        android:layout_marginEnd="6dp" />
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="Lehrer"
+                        app:tint="?attr/colorOnSurfaceVariant" />
 
                     <TextView
                         android:id="@+id/tv_teacher"
@@ -164,45 +170,57 @@
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
-                        android:fontFamily="@font/inter_regular"
                         android:textSize="@dimen/text_size_details"
                         android:maxLines="1"
                         android:ellipsize="end"
-                        tools:text="Herr Schmidt" />
+                        tools:text="Herr Müller" />
 
                 </LinearLayout>
 
-                <!-- Raum -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/rounded_background_secondary"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
+                    android:gravity="center_vertical">
 
                     <ImageView
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
                         android:src="@drawable/ic_location_on_24"
-                        app:tint="?attr/colorOnSecondaryContainer"
-                        android:layout_marginEnd="4dp" />
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="Raum"
+                        app:tint="?attr/colorOnSurfaceVariant" />
 
                     <TextView
                         android:id="@+id/tv_room"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:fontFamily="@font/inter_medium"
-                        android:textSize="12sp"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="@dimen/text_size_details"
                         android:maxLines="1"
-                        tools:text="201" />
+                        tools:text="A101" />
 
                 </LinearLayout>
 
             </LinearLayout>
+
+            <!-- Gruppen-Information -->
+            <TextView
+                android:id="@+id/tv_group_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/group_badge_background"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                android:textColor="?attr/colorOnPrimary"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:visibility="gone"
+                android:maxLines="1"
+                tools:text="Gruppe A"
+                tools:visibility="visible" />
 
         </LinearLayout>
 

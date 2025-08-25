@@ -8,10 +8,10 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.quantumprof.edunew9.R
-import com.quantumprof.edunew9.data.TimetableEntry
+import com.quantumprof.edunew9.data.MergedTimetableEntry
 
-class TimetableAdapter(private val entries: List<TimetableEntry>) :
-    RecyclerView.Adapter<TimetableAdapter.ViewHolder>() {
+class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
+    RecyclerView.Adapter<MergedTimetableAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val startTime: TextView = view.findViewById(R.id.tv_start_time)
@@ -22,11 +22,13 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         val room: TextView = view.findViewById(R.id.tv_room)
         val statusIcon: ImageView = view.findViewById(R.id.iv_status)
         val groupInfo: TextView = view.findViewById(R.id.tv_group_info)
+        val durationIndicator: TextView = view.findViewById(R.id.tv_duration_indicator)
+        val periodIndicator: View = view.findViewById(R.id.view_period_indicator)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.timetable_item, parent, false)
+            .inflate(R.layout.merged_timetable_item, parent, false)
         return ViewHolder(view)
     }
 
@@ -38,18 +40,22 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         holder.startTime.text = entry.startTime
         holder.endTime.text = entry.endTime
 
-        // Formatiere die Stunden-Nummer schöner
-        val periodText = when {
-            entry.period.contains(".") -> entry.period.replace(".", ". Std")
-            entry.period.isNotEmpty() -> "${entry.period}. Std"
-            else -> ""
+        // Formatiere die Stunden-Nummer für zusammengeführte Stunden
+        val periodText = if (entry.isMultiplePeriod) {
+            "${entry.periodRange}. Std"
+        } else {
+            when {
+                entry.periods.first().contains(".") -> entry.periods.first().replace(".", ". Std")
+                entry.periods.first().isNotEmpty() -> "${entry.periods.first()}. Std"
+                else -> ""
+            }
         }
         holder.period.text = periodText
 
         // Setze das Fach
         holder.subject.text = entry.subject
 
-        // Setze den Lehrer (mit besserer Formatierung)
+        // Setze den Lehrer
         val teacherText = when {
             entry.teacher.isNotEmpty() && !entry.teacher.startsWith("Herr") && !entry.teacher.startsWith("Frau") ->
                 if (entry.teacher.length <= 4) entry.teacher else "Herr/Frau ${entry.teacher}"
@@ -61,6 +67,7 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         // Setze den Raum
         holder.room.text = if (entry.room.isNotEmpty()) entry.room else "?"
 
+        // Gruppeninformation
         val groupText = when {
             entry.detectedGroup != null -> "Gruppe ${entry.detectedGroup}"
             entry.groupNames.isNotEmpty() -> entry.groupNames.joinToString(", ")
@@ -81,7 +88,29 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
             holder.groupInfo.visibility = View.GONE
         }
 
-        // Prüfe ob Unterricht ausfällt und wende entsprechende Darstellung an
+        // Dauer-Indikator für Mehrfachstunden
+        if (entry.isMultiplePeriod) {
+            holder.durationIndicator.visibility = View.VISIBLE
+            holder.durationIndicator.text = entry.durationText
+
+            // Verschiedene Farben je nach Anzahl der Stunden
+            val colorRes = when (entry.originalEntries.size) {
+                2 -> R.color.double_period_color
+                3 -> R.color.triple_period_color
+                else -> R.color.multiple_period_color
+            }
+            holder.durationIndicator.setBackgroundColor(ContextCompat.getColor(context, colorRes))
+
+            // Verstärkte visuelle Hervorhebung für Mehrfachstunden
+            holder.periodIndicator.visibility = View.VISIBLE
+            holder.periodIndicator.setBackgroundColor(ContextCompat.getColor(context, colorRes))
+
+        } else {
+            holder.durationIndicator.visibility = View.GONE
+            holder.periodIndicator.visibility = View.GONE
+        }
+
+        // Prüfe ob Unterricht ausfällt
         val isCancelled = entry.type == "Entfällt"
 
         // Setze das Status-Icon basierend auf dem Typ
@@ -105,7 +134,6 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
 
         // Ausgegraut Darstellung für ausgefallene Stunden
         if (isCancelled) {
-            // Reduziere die Transparenz für alle Text-Elemente
             holder.startTime.alpha = 0.5f
             holder.endTime.alpha = 0.5f
             holder.period.alpha = 0.5f
@@ -113,15 +141,12 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
             holder.teacher.alpha = 0.5f
             holder.room.alpha = 0.5f
             holder.groupInfo.alpha = 0.5f
+            holder.durationIndicator.alpha = 0.5f
 
-            // Setze graue Hintergrundfarbe
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray))
             holder.itemView.alpha = 0.7f
-
-            // Durchstreiche den Text für das Fach
             holder.subject.paintFlags = holder.subject.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
         } else {
-            // Normale Darstellung für reguläre Stunden
             holder.startTime.alpha = 1.0f
             holder.endTime.alpha = 1.0f
             holder.period.alpha = 1.0f
@@ -129,14 +154,16 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
             holder.teacher.alpha = 1.0f
             holder.room.alpha = 1.0f
             holder.groupInfo.alpha = 1.0f
+            holder.durationIndicator.alpha = 1.0f
 
-            // Setze die normale Hintergrundfarbe
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
             holder.itemView.alpha = 1.0f
-
-            // Entferne Durchstreichung
             holder.subject.paintFlags = holder.subject.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
         }
+
+        // Fachspezifische Farbkodierung
+        val subjectColor = getSubjectColor(entry.subject)
+        // Hier könnten Sie eine subtile Farbkodierung am linken Rand hinzufügen
     }
 
     private fun getSubjectColor(subject: String): Int {

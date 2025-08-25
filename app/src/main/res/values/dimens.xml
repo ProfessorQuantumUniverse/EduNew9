@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Timetable Card Heights for Multiple Periods - Kompakter -->
+    <dimen name="single_period_height">90dp</dimen>
+    <dimen name="double_period_height">110dp</dimen>
+    <dimen name="triple_period_height">130dp</dimen>
+    <dimen name="multiple_period_height">150dp</dimen>
+
+    <!-- Spacing and Margins - Reduziert -->
+    <dimen name="card_margin_horizontal">12dp</dimen>
+    <dimen name="card_margin_vertical">6dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_padding_small">12dp</dimen>
+
+    <!-- Period Indicator -->
+    <dimen name="period_indicator_width">4dp</dimen>
+    <dimen name="period_indicator_radius">2dp</dimen>
+
+    <!-- Duration Badge -->
+    <dimen name="duration_badge_padding_horizontal">10dp</dimen>
+    <dimen name="duration_badge_padding_vertical">3dp</dimen>
+    <dimen name="duration_badge_radius">10dp</dimen>
+
+    <!-- Text Sizes - Kompakter -->
+    <dimen name="text_size_time_large">16sp</dimen>
+    <dimen name="text_size_time_small">12sp</dimen>
+    <dimen name="text_size_subject">18sp</dimen>
+    <dimen name="text_size_details">14sp</dimen>
+</resources>

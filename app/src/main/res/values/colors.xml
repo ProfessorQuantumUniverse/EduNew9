@@ -2,6 +2,11 @@
 <resources>
     <!-- Material Design 3 Expressive Colors -->
 
+    <color name="group_a_color">#E3F2FD</color>      <!-- Hellblau für Gruppe A -->
+    <color name="group_b_color">#F3E5F5</color>      <!-- Helllila für Gruppe B -->
+    <color name="group_neutral_color">#F5F5F5</color> <!-- Neutral grau -->
+
+
     <!-- Primary Colors -->
     <color name="md_theme_light_primary">#6750A4</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
@@ -55,9 +60,29 @@
     <color name="timetable_sport">#FFEBEE</color>
     <color name="timetable_default">#F5F5F5</color>
 
+    <!-- Multiple Period Colors for Visual Merging - Verbessert für kompakte Cards -->
+    <color name="double_period_color">#4CAF50</color>          <!-- Grün für Doppelstunden -->
+    <color name="triple_period_color">#FF9800</color>          <!-- Orange für Dreifachstunden -->
+    <color name="multiple_period_color">#9C27B0</color>        <!-- Lila für 4+ Stunden -->
+
+    <!-- Period Indicator Colors - Optimiert für bessere Sichtbarkeit -->
+    <color name="double_period_indicator">#2E7D32</color>      <!-- Dunkleres Grün -->
+    <color name="triple_period_indicator">#F57C00</color>      <!-- Dunkleres Orange -->
+    <color name="multiple_period_indicator">#7B1FA2</color>    <!-- Dunkleres Lila -->
+
+    <!-- Neue kompakte Badge-Farben für bessere Lesbarkeit -->
+    <color name="double_period_badge">#388E3C</color>          <!-- Mittleres Grün für Badges -->
+    <color name="triple_period_badge">#FB8C00</color>          <!-- Mittleres Orange für Badges -->
+    <color name="multiple_period_badge">#8E24AA</color>        <!-- Mittleres Lila für Badges -->
+
+    <!-- Text-Farben für Merged Lesson Badges -->
+    <color name="merged_lesson_text_light">#FFFFFF</color>     <!-- Weiß für dunkle Backgrounds -->
+    <color name="merged_lesson_text_dark">#000000</color>      <!-- Schwarz für helle Backgrounds -->
+
+    <!-- Timetable Subject Colors -->     <!-- Grau für andere Fächer -->
+
     <!-- Surface tints -->
     <color name="surface_tint_1">#F7F2FA</color>
     <color name="surface_tint_2">#F3EDF7</color>
     <color name="surface_tint_3">#ECE6F0</color>
 </resources>
-

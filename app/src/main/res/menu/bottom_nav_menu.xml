@@ -8,4 +8,8 @@
         android:id="@+id/navigation_timetable"
         android:icon="@drawable/ic_schedule_24"
         android:title="Stundenplan" />
+    <item
+        android:id="@+id/navigation_settings"
+        android:icon="@drawable/ic_settings_24"
+        android:title="Einstellungen" />
 </menu>

@@ -13,6 +13,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.quantumprof.edunew9.R
+import com.quantumprof.edunew9.utils.TimetableMerger
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -67,7 +68,15 @@ class TimetableFragment : Fragment() {
                         Toast.makeText(context, "Keine Stunden für heute gefunden.", Toast.LENGTH_SHORT).show()
                     } else {
                         showContent(entries)
-                        Toast.makeText(context, "${entries.size} Stunden geladen", Toast.LENGTH_SHORT).show()
+                        // Zeige Informationen über zusammengeführte Stunden
+                        val mergedEntries = TimetableMerger.mergeConsecutiveLessons(entries)
+                        val mergedCount = mergedEntries.count { it.isMultiplePeriod }
+                        val message = if (mergedCount > 0) {
+                            "${entries.size} Stunden geladen (${mergedCount} Doppel-/Dreifachstunden zusammengeführt)"
+                        } else {
+                            "${entries.size} Stunden geladen"
+                        }
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onFailure = { error ->
@@ -86,6 +95,11 @@ class TimetableFragment : Fragment() {
     private fun showContent(entries: List<com.quantumprof.edunew9.data.TimetableEntry>) {
         emptyStateLayout.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
-        recyclerView.adapter = TimetableAdapter(entries)
+
+        // Führe aufeinanderfolgende Stunden zusammen
+        val mergedEntries = TimetableMerger.mergeConsecutiveLessons(entries)
+
+        // Verwende den neuen MergedTimetableAdapter
+        recyclerView.adapter = MergedTimetableAdapter(mergedEntries)
     }
 }
