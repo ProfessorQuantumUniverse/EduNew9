@@ -1,88 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material Design 3 Expressive Colors -->
+    <!-- Modern Material Design 3 Colors -->
 
-    <color name="group_a_color">#E3F2FD</color>      <!-- Hellblau für Gruppe A -->
-    <color name="group_b_color">#F3E5F5</color>      <!-- Helllila für Gruppe B -->
-    <color name="group_neutral_color">#F5F5F5</color> <!-- Neutral grau -->
-
-
-    <!-- Primary Colors -->
-    <color name="md_theme_light_primary">#6750A4</color>
+    <!-- Primary Colors - Sanfter und harmonischer -->
+    <color name="md_theme_light_primary">#6366F1</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_primaryContainer">#EADDFF</color>
-    <color name="md_theme_light_onPrimaryContainer">#21005D</color>
+    <color name="md_theme_light_primaryContainer">#E0E7FF</color>
+    <color name="md_theme_light_onPrimaryContainer">#1E1B3D</color>
 
-    <!-- Secondary Colors -->
-    <color name="md_theme_light_secondary">#625B71</color>
+    <!-- Secondary Colors - Eleganter -->
+    <color name="md_theme_light_secondary">#6B7280</color>
     <color name="md_theme_light_onSecondary">#FFFFFF</color>
-    <color name="md_theme_light_secondaryContainer">#E8DEF8</color>
-    <color name="md_theme_light_onSecondaryContainer">#1D192B</color>
+    <color name="md_theme_light_secondaryContainer">#F3F4F6</color>
+    <color name="md_theme_light_onSecondaryContainer">#1F2937</color>
 
     <!-- Tertiary Colors -->
-    <color name="md_theme_light_tertiary">#7D5260</color>
+    <color name="md_theme_light_tertiary">#8B5CF6</color>
     <color name="md_theme_light_onTertiary">#FFFFFF</color>
-    <color name="md_theme_light_tertiaryContainer">#FFD8E4</color>
-    <color name="md_theme_light_onTertiaryContainer">#31111D</color>
+    <color name="md_theme_light_tertiaryContainer">#F3E8FF</color>
+    <color name="md_theme_light_onTertiaryContainer">#2D1B69</color>
 
     <!-- Error Colors -->
-    <color name="md_theme_light_error">#BA1A1A</color>
-    <color name="md_theme_light_errorContainer">#FFDAD6</color>
+    <color name="md_theme_light_error">#EF4444</color>
+    <color name="md_theme_light_errorContainer">#FEE2E2</color>
     <color name="md_theme_light_onError">#FFFFFF</color>
-    <color name="md_theme_light_onErrorContainer">#410002</color>
+    <color name="md_theme_light_onErrorContainer">#7F1D1D</color>
 
-    <!-- Background & Surface -->
-    <color name="md_theme_light_background">#FFFBFE</color>
-    <color name="md_theme_light_onBackground">#1C1B1F</color>
-    <color name="md_theme_light_surface">#FFFBFE</color>
-    <color name="md_theme_light_onSurface">#1C1B1F</color>
-    <color name="md_theme_light_surfaceVariant">#E7E0EC</color>
-    <color name="md_theme_light_onSurfaceVariant">#49454F</color>
+    <!-- Background & Surface - Modernisiert -->
+    <color name="md_theme_light_background">#FAFAFA</color>
+    <color name="md_theme_light_onBackground">#1F2937</color>
+    <color name="md_theme_light_surface">#FFFFFF</color>
+    <color name="md_theme_light_onSurface">#1F2937</color>
+    <color name="md_theme_light_surfaceVariant">#F8FAFC</color>
+    <color name="md_theme_light_onSurfaceVariant">#64748B</color>
 
-    <!-- Outline -->
-    <color name="md_theme_light_outline">#79747E</color>
-    <color name="md_theme_light_outlineVariant">#CAC4D0</color>
+    <!-- Outline - Subtiler -->
+    <color name="md_theme_light_outline">#E2E8F0</color>
+    <color name="md_theme_light_outlineVariant">#F1F5F9</color>
 
-    <!-- Semantic Colors for App -->
-    <color name="substitution_cancelled">#FFEBEE</color>
-    <color name="substitution_cancelled_text">#C62828</color>
-    <color name="substitution_changed">#FFF3E0</color>
-    <color name="substitution_changed_text">#EF6C00</color>
-    <color name="substitution_event">#E8F5E8</color>
-    <color name="substitution_event_text">#2E7D32</color>
+    <!-- Modernisierte Gruppen-Farben -->
+    <color name="group_a_color">#DBEAFE</color>      <!-- Sanftes Blau -->
+    <color name="group_b_color">#F3E8FF</color>      <!-- Sanftes Lila -->
+    <color name="group_neutral_color">#F1F5F9</color> <!-- Neutrales Grau -->
+    <color name="group_a_text">#1E40AF</color>       <!-- Dunkles Blau für Text -->
+    <color name="group_b_text">#7C3AED</color>       <!-- Dunkles Lila für Text -->
 
-    <!-- Timetable Colors -->
-    <color name="timetable_math">#E1F5FE</color>
-    <color name="timetable_language">#FCE4EC</color>
-    <color name="timetable_science">#E8F5E8</color>
-    <color name="timetable_history">#FFF8E1</color>
-    <color name="timetable_arts">#F3E5F5</color>
-    <color name="timetable_sport">#FFEBEE</color>
-    <color name="timetable_default">#F5F5F5</color>
+    <!-- Modernisierte Status-Farben -->
+    <color name="substitution_cancelled">#FEE2E2</color>
+    <color name="substitution_cancelled_text">#DC2626</color>
+    <color name="substitution_changed">#FEF3C7</color>
+    <color name="substitution_changed_text">#D97706</color>
+    <color name="substitution_event">#D1FAE5</color>
+    <color name="substitution_event_text">#065F46</color>
 
-    <!-- Multiple Period Colors for Visual Merging - Verbessert für kompakte Cards -->
-    <color name="double_period_color">#4CAF50</color>          <!-- Grün für Doppelstunden -->
-    <color name="triple_period_color">#FF9800</color>          <!-- Orange für Dreifachstunden -->
-    <color name="multiple_period_color">#9C27B0</color>        <!-- Lila für 4+ Stunden -->
+    <!-- Moderne Dauer-Badge Farben -->
+    <color name="double_period_color">#10B981</color>          <!-- Emerald -->
+    <color name="triple_period_color">#F59E0B</color>          <!-- Amber -->
+    <color name="multiple_period_color">#8B5CF6</color>        <!-- Violet -->
 
-    <!-- Period Indicator Colors - Optimiert für bessere Sichtbarkeit -->
-    <color name="double_period_indicator">#2E7D32</color>      <!-- Dunkleres Grün -->
-    <color name="triple_period_indicator">#F57C00</color>      <!-- Dunkleres Orange -->
-    <color name="multiple_period_indicator">#7B1FA2</color>    <!-- Dunkleres Lila -->
+    <color name="double_period_indicator">#059669</color>
+    <color name="triple_period_indicator">#D97706</color>
+    <color name="multiple_period_indicator">#7C3AED</color>
 
-    <!-- Neue kompakte Badge-Farben für bessere Lesbarkeit -->
-    <color name="double_period_badge">#388E3C</color>          <!-- Mittleres Grün für Badges -->
-    <color name="triple_period_badge">#FB8C00</color>          <!-- Mittleres Orange für Badges -->
-    <color name="multiple_period_badge">#8E24AA</color>        <!-- Mittleres Lila für Badges -->
+    <color name="double_period_badge">#065F46</color>
+    <color name="triple_period_badge">#92400E</color>
+    <color name="multiple_period_badge">#5B21B6</color>
 
-    <!-- Text-Farben für Merged Lesson Badges -->
-    <color name="merged_lesson_text_light">#FFFFFF</color>     <!-- Weiß für dunkle Backgrounds -->
-    <color name="merged_lesson_text_dark">#000000</color>      <!-- Schwarz für helle Backgrounds -->
+    <!-- Badge Text Colors -->
+    <color name="badge_text_light">#FFFFFF</color>
+    <color name="badge_text_dark">#1F2937</color>
 
-    <!-- Timetable Subject Colors -->     <!-- Grau für andere Fächer -->
+    <!-- Timetable Subject Colors - Modernisiert -->
+    <color name="timetable_math">#EFF6FF</color>
+    <color name="timetable_language">#FDF2F8</color>
+    <color name="timetable_science">#ECFDF5</color>
+    <color name="timetable_history">#FFFBEB</color>
+    <color name="timetable_arts">#F5F3FF</color>
+    <color name="timetable_sport">#FEF2F2</color>
+    <color name="timetable_default">#F8FAFC</color>
 
-    <!-- Surface tints -->
-    <color name="surface_tint_1">#F7F2FA</color>
-    <color name="surface_tint_2">#F3EDF7</color>
-    <color name="surface_tint_3">#ECE6F0</color>
+    <!-- Surface Tints - Subtiler -->
+    <color name="surface_tint_1">#FDFDFE</color>
+    <color name="surface_tint_2">#FAFBFC</color>
+    <color name="surface_tint_3">#F7F8FA</color>
+
+    <!-- Shadows und Elevation -->
+    <color name="shadow_light">#1A000000</color>
+    <color name="shadow_medium">#33000000</color>
 </resources>

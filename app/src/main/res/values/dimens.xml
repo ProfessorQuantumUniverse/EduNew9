@@ -1,29 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Timetable Card Heights for Multiple Periods - Kompakter -->
-    <dimen name="single_period_height">90dp</dimen>
-    <dimen name="double_period_height">110dp</dimen>
-    <dimen name="triple_period_height">130dp</dimen>
-    <dimen name="multiple_period_height">150dp</dimen>
 
-    <!-- Spacing and Margins - Reduziert -->
-    <dimen name="card_margin_horizontal">12dp</dimen>
-    <dimen name="card_margin_vertical">6dp</dimen>
-    <dimen name="card_padding">16dp</dimen>
-    <dimen name="card_padding_small">12dp</dimen>
+    <!-- **VERBESSERTE PERIOD INDICATOR DIMENSIONEN** -->
+    <dimen name="period_indicator_width">6dp</dimen>        <!-- Etwas breiter -->
+    <dimen name="period_indicator_radius">3dp</dimen>       <!-- Vollständig abgerundet -->
+    <dimen name="period_indicator_margin">2dp</dimen>
+    <!-- Modern Timetable Card Heights - Verbesserte Proportionen -->
+    <dimen name="single_period_height">100dp</dimen>
+    <dimen name="double_period_height">120dp</dimen>
+    <dimen name="triple_period_height">140dp</dimen>
+    <dimen name="multiple_period_height">160dp</dimen>
 
-    <!-- Period Indicator -->
-    <dimen name="period_indicator_width">4dp</dimen>
-    <dimen name="period_indicator_radius">2dp</dimen>
+    <!-- Optimierte Spacing und Margins -->
+    <dimen name="card_margin_horizontal">16dp</dimen>
+    <dimen name="card_margin_vertical">8dp</dimen>
+    <dimen name="card_padding">20dp</dimen>
+    <dimen name="card_padding_small">14dp</dimen>
+    <dimen name="card_inner_spacing">12dp</dimen>
 
-    <!-- Duration Badge -->
-    <dimen name="duration_badge_padding_horizontal">10dp</dimen>
-    <dimen name="duration_badge_padding_vertical">3dp</dimen>
-    <dimen name="duration_badge_radius">10dp</dimen>
+    <!-- Zeit-Sektion Optimierungen -->
+    <dimen name="time_section_width">88dp</dimen>
+    <dimen name="time_section_padding">18dp</dimen>
 
-    <!-- Text Sizes - Kompakter -->
-    <dimen name="text_size_time_large">16sp</dimen>
-    <dimen name="text_size_time_small">12sp</dimen>
-    <dimen name="text_size_subject">18sp</dimen>
-    <dimen name="text_size_details">14sp</dimen>
+    <!-- Moderne Badge-Dimensionen -->
+    <dimen name="duration_badge_padding_horizontal">12dp</dimen>
+    <dimen name="duration_badge_padding_vertical">4dp</dimen>
+    <dimen name="duration_badge_radius">12dp</dimen>
+
+    <!-- Group Badge -->
+    <dimen name="group_badge_padding_horizontal">10dp</dimen>
+    <dimen name="group_badge_padding_vertical">3dp</dimen>
+    <dimen name="group_badge_radius">10dp</dimen>
+
+    <!-- Verbesserte Text-Größen -->
+    <dimen name="text_size_time_large">18sp</dimen>
+    <dimen name="text_size_time_small">13sp</dimen>
+    <dimen name="text_size_subject">22sp</dimen>
+    <dimen name="text_size_details">15sp</dimen>
+    <dimen name="text_size_secondary">13sp</dimen>
+    <dimen name="text_size_badge">11sp</dimen>
+
+    <!-- Icon-Größen -->
+    <dimen name="icon_size_small">16dp</dimen>
+    <dimen name="icon_size_medium">18dp</dimen>
+    <dimen name="icon_size_large">20dp</dimen>
+
+    <!-- Card Elevation und Radius -->
+    <dimen name="card_elevation">3dp</dimen>
+    <dimen name="card_corner_radius">18dp</dimen>
+    <dimen name="time_section_corner_radius">18dp</dimen>
 </resources>

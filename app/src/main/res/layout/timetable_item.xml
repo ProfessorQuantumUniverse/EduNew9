@@ -6,205 +6,264 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="@dimen/card_margin_horizontal"
     android:layout_marginVertical="@dimen/card_margin_vertical"
-    app:cardElevation="2dp"
-    app:strokeWidth="0dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
     app:cardCornerRadius="16dp"
-    app:cardBackgroundColor="?attr/colorSurfaceVariant"
+    app:cardBackgroundColor="?attr/colorSurface"
     android:clipToPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="0dp">
 
-        <!-- Zeit-Bereich (links) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/rounded_left_background"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="@dimen/card_padding"
-            android:minWidth="80dp">
-
-            <TextView
-                android:id="@+id/tv_start_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_bold"
-                android:textSize="@dimen/text_size_time_large"
-                android:maxLines="1"
-                tools:text="08:00" />
-
-            <View
-                android:layout_width="24dp"
-                android:layout_height="1dp"
-                android:background="?attr/colorOnPrimary"
-                android:alpha="0.7"
-                android:layout_marginVertical="4dp" />
-
-            <TextView
-                android:id="@+id/tv_end_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_medium"
-                android:textSize="@dimen/text_size_time_small"
-                android:alpha="0.9"
-                android:maxLines="1"
-                tools:text="08:45" />
-
-            <TextView
-                android:id="@+id/tv_period"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                android:textColor="?attr/colorOnPrimary"
-                android:fontFamily="@font/inter_medium"
-                android:alpha="0.8"
-                android:layout_marginTop="2dp"
-                android:textSize="10sp"
-                android:maxLines="1"
-                tools:text="1. Std" />
-
-        </LinearLayout>
-
-        <!-- Inhalt-Bereich (rechts) -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Fullwidth Titel (nur wenn inline zu lang) -->
+        <TextView
+            android:id="@+id/tv_subject_full"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="@dimen/card_padding"
-            android:layout_gravity="center_vertical">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="15sp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Sehr Langer Fachname Der In Der Inline Variante Nicht Platz Hätte Und Deshalb In Eigener Zeile Steht" />
 
-            <!-- Fach-Header -->
+        <!-- Hauptinhalt mit inline Titel -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="0dp">
+
+            <!-- Zeit-Bereich (links) -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="6dp">
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/rounded_left_background"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="16dp"
+                android:minWidth="70dp">
 
                 <TextView
-                    android:id="@+id/tv_subject"
-                    android:layout_width="0dp"
+                    android:id="@+id/tv_start_time"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:fontFamily="@font/inter_semibold"
-                    android:textSize="@dimen/text_size_subject"
-                    android:maxLines="2"
-                    android:ellipsize="end"
-                    android:lineSpacingMultiplier="1.1"
-                    tools:text="Mathematik" />
+                    android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:fontFamily="@font/inter_bold"
+                    android:textSize="@dimen/text_size_time_large"
+                    android:maxLines="1"
+                    tools:text="08:00" />
 
-                <!-- Status Icon -->
-                <ImageView
-                    android:id="@+id/iv_status"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_check_circle_24"
-                    app:tint="@color/substitution_event_text"
-                    android:layout_marginStart="6dp"
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOnPrimary"
+                    android:alpha="0.7"
+                    android:layout_marginVertical="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_end_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:fontFamily="@font/inter_medium"
+                    android:textSize="@dimen/text_size_time_small"
+                    android:alpha="0.9"
+                    android:maxLines="1"
+                    tools:text="08:45" />
+
+                <TextView
+                    android:id="@+id/tv_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:fontFamily="@font/inter_medium"
+                    android:alpha="0.8"
+                    android:layout_marginTop="2dp"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    tools:text="1. Std" />
+
+                <!-- Duration Badge für Doppel/Dreifachstunden -->
+                <TextView
+                    android:id="@+id/tv_duration_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/duration_indicator_background_modern"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnTertiary"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textSize="9sp"
                     android:visibility="gone"
+                    android:maxLines="1"
+                    tools:text="2x"
                     tools:visibility="visible" />
 
             </LinearLayout>
 
-            <!-- **NEU: Gruppeninformation** -->
-            <TextView
-                android:id="@+id/tv_group_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                android:textColor="?attr/colorOnSecondaryContainer"
-                android:background="@drawable/rounded_background_secondary"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:layout_marginBottom="6dp"
-                android:textSize="11sp"
-                android:visibility="gone"
-                android:maxLines="1"
-                tools:text="Gruppe A"
-                tools:visibility="visible" />
-
-            <!-- Lehrer und Raum -->
+            <!-- Inhalt-Bereich (rechts) mit inline Titel -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_gravity="center_vertical">
 
-                <!-- Lehrer -->
-                <LinearLayout
-                    android:layout_width="0dp"
+                <!-- Inline Titel -->
+                <TextView
+                    android:id="@+id/tv_subject_inline"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textSize="15sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:layout_marginBottom="8dp"
+                    tools:text="Mathematik" />
+
+                <!-- Status Icon und andere Elemente -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginEnd="8dp">
+                    android:layout_marginBottom="6dp">
 
+                    <!-- Platzhalter für mögliche Badges -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <!-- Status Icon -->
                     <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_person_24"
-                        app:tint="?attr/colorOnSurfaceVariant"
-                        android:layout_marginEnd="6dp" />
-
-                    <TextView
-                        android:id="@+id/tv_teacher"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:fontFamily="@font/inter_regular"
-                        android:textSize="@dimen/text_size_details"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        tools:text="Herr Schmidt" />
+                        android:id="@+id/iv_status"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_check_circle_24"
+                        app:tint="@color/substitution_event_text"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
 
                 </LinearLayout>
 
-                <!-- Raum -->
-                <LinearLayout
+                <!-- **NEU: Gruppeninformation** -->
+                <TextView
+                    android:id="@+id/tv_group_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnSecondaryContainer"
                     android:background="@drawable/rounded_background_secondary"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:layout_marginBottom="6dp"
+                    android:textSize="11sp"
+                    android:visibility="gone"
+                    android:maxLines="1"
+                    tools:text="Gruppe A"
+                    tools:visibility="visible" />
 
-                    <ImageView
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/ic_location_on_24"
-                        app:tint="?attr/colorOnSecondaryContainer"
-                        android:layout_marginEnd="4dp" />
+                <!-- Lehrer und Raum -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <TextView
-                        android:id="@+id/tv_room"
+                    <!-- Lehrer -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginEnd="8dp">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_person_24"
+                            app:tint="?attr/colorOnSurfaceVariant"
+                            android:layout_marginEnd="6dp" />
+
+                        <TextView
+                            android:id="@+id/tv_teacher"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:fontFamily="@font/inter_regular"
+                            android:textSize="@dimen/text_size_details"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            tools:text="Herr Schmidt" />
+
+                    </LinearLayout>
+
+                    <!-- Raum -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:fontFamily="@font/inter_medium"
-                        android:textSize="12sp"
-                        android:maxLines="1"
-                        tools:text="201" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/rounded_background_secondary"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_location_on_24"
+                            app:tint="?attr/colorOnSecondaryContainer"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:id="@+id/tv_room"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:fontFamily="@font/inter_medium"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            tools:text="201" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </LinearLayout>
 
         </LinearLayout>
+
+        <!-- Divider mit Gradient -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/gradient_divider" />
 
     </LinearLayout>
 

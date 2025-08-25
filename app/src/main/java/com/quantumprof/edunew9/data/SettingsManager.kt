@@ -1,62 +1,63 @@
 package com.quantumprof.edunew9.data
 
 import android.content.Context
+import android.content.SharedPreferences
 
 object SettingsManager {
-    private const val PREFS_NAME = "edu_settings"
+    private const val PREFS_NAME = "edupage_settings"
     private const val KEY_SELECTED_GROUP = "selected_group"
-    private const val KEY_AUTO_FILTER = "auto_filter_groups"
-    private const val KEY_SELECTED_ELECTIVE = "selected_elective"  // **NEU**
-    private const val KEY_AUTO_FILTER_ELECTIVES = "auto_filter_electives"  // **NEU**
+    private const val KEY_AUTO_FILTER = "auto_filter"
+    private const val KEY_SELECTED_ELECTIVE = "selected_elective"
+    private const val KEY_AUTO_FILTER_ELECTIVES = "auto_filter_electives"
 
-    // **WAHLKURSE KONSTANTEN**
-    const val ELECTIVE_ORCHESTER = "Orchester"
-    const val ELECTIVE_KUNSTWERKSTATT = "Kunstwerkstatt"
-    const val ELECTIVE_OBERSTUFENCHOR = "OberstufenChor"
+    private fun getPrefs(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
 
+    // Gruppen-Einstellungen
     fun saveSelectedGroup(context: Context, group: String?) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_SELECTED_GROUP, group).apply()
-    }
-    
-    fun getSelectedGroup(context: Context): String? {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_SELECTED_GROUP, null)
-    }
-    
-    fun saveAutoFilter(context: Context, enabled: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putBoolean(KEY_AUTO_FILTER, enabled).apply()
-    }
-    
-    fun getAutoFilter(context: Context): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_AUTO_FILTER, true)
+        getPrefs(context).edit()
+            .putString(KEY_SELECTED_GROUP, group)
+            .apply()
     }
 
-    // **NEUE WAHLKURS-FILTERUNG**
+    fun getSelectedGroup(context: Context): String? {
+        return getPrefs(context).getString(KEY_SELECTED_GROUP, null)
+    }
+
+    fun saveAutoFilter(context: Context, enabled: Boolean) {
+        getPrefs(context).edit()
+            .putBoolean(KEY_AUTO_FILTER, enabled)
+            .apply()
+    }
+
+    fun getAutoFilter(context: Context): Boolean {
+        return getPrefs(context).getBoolean(KEY_AUTO_FILTER, true)
+    }
+
+    // Wahlkurs-Einstellungen
     fun saveSelectedElective(context: Context, elective: String?) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_SELECTED_ELECTIVE, elective).apply()
+        getPrefs(context).edit()
+            .putString(KEY_SELECTED_ELECTIVE, elective)
+            .apply()
     }
 
     fun getSelectedElective(context: Context): String? {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_SELECTED_ELECTIVE, null)
+        return getPrefs(context).getString(KEY_SELECTED_ELECTIVE, null)
     }
 
     fun saveAutoFilterElectives(context: Context, enabled: Boolean) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putBoolean(KEY_AUTO_FILTER_ELECTIVES, enabled).apply()
+        getPrefs(context).edit()
+            .putBoolean(KEY_AUTO_FILTER_ELECTIVES, enabled)
+            .apply()
     }
 
     fun getAutoFilterElectives(context: Context): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_AUTO_FILTER_ELECTIVES, true)
+        return getPrefs(context).getBoolean(KEY_AUTO_FILTER_ELECTIVES, false)
     }
 
-    // **HILFSMETHODE FÜR VERFÜGBARE WAHLKURSE**
+    // Verfügbare Wahlkurse
     fun getAvailableElectives(): List<String> {
-        return listOf(ELECTIVE_ORCHESTER, ELECTIVE_KUNSTWERKSTATT, ELECTIVE_OBERSTUFENCHOR)
+        return listOf("Orchester", "Kunstwerkstatt", "Oberstufenchor")
     }
 }

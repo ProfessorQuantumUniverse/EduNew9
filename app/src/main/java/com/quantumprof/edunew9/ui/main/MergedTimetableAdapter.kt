@@ -16,7 +16,6 @@ class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val startTime: TextView = view.findViewById(R.id.tv_start_time)
         val endTime: TextView = view.findViewById(R.id.tv_end_time)
-        val period: TextView = view.findViewById(R.id.tv_period)
         val subject: TextView = view.findViewById(R.id.tv_subject)
         val teacher: TextView = view.findViewById(R.id.tv_teacher)
         val room: TextView = view.findViewById(R.id.tv_room)
@@ -36,26 +35,14 @@ class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
         val entry = entries[position]
         val context = holder.itemView.context
 
-        // Setze die Zeiten
+        // Zeit-Anzeige
         holder.startTime.text = entry.startTime
         holder.endTime.text = entry.endTime
 
-        // Formatiere die Stunden-Nummer für zusammengeführte Stunden
-        val periodText = if (entry.isMultiplePeriod) {
-            "${entry.periodRange}. Std"
-        } else {
-            when {
-                entry.periods.first().contains(".") -> entry.periods.first().replace(".", ". Std")
-                entry.periods.first().isNotEmpty() -> "${entry.periods.first()}. Std"
-                else -> ""
-            }
-        }
-        holder.period.text = periodText
-
-        // Setze das Fach
+        // Fach-Name
         holder.subject.text = entry.subject
 
-        // Setze den Lehrer
+        // Lehrer-Information
         val teacherText = when {
             entry.teacher.isNotEmpty() && !entry.teacher.startsWith("Herr") && !entry.teacher.startsWith("Frau") ->
                 if (entry.teacher.length <= 4) entry.teacher else "Herr/Frau ${entry.teacher}"
@@ -64,10 +51,26 @@ class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
         }
         holder.teacher.text = teacherText
 
-        // Setze den Raum
+        // Raum-Information
         holder.room.text = if (entry.room.isNotEmpty()) entry.room else "?"
 
-        // Gruppeninformation
+        // Gruppen-Information
+        setupGroupInfo(holder, entry, context)
+
+        // Status-Icon
+        setupStatusIcon(holder, entry, context)
+
+        // Dauer-Indikator
+        setupDurationIndicator(holder, entry, context)
+
+        // **VERBESSERTE PERIODE-INDIKATOR LOGIK**
+        setupModernPeriodIndicator(holder, entry, context)
+
+        // Ausgefallene Stunden-Styling
+        applyAppearanceForCancelledLessons(holder, entry, context)
+    }
+
+    private fun setupGroupInfo(holder: ViewHolder, entry: MergedTimetableEntry, context: android.content.Context) {
         val groupText = when {
             entry.detectedGroup != null -> "Gruppe ${entry.detectedGroup}"
             entry.groupNames.isNotEmpty() -> entry.groupNames.joinToString(", ")
@@ -78,42 +81,26 @@ class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
             holder.groupInfo.visibility = View.VISIBLE
             holder.groupInfo.text = groupText
 
-            // Farbkodierung je nach Gruppe
             when (entry.detectedGroup) {
-                "A" -> holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_a_color))
-                "B" -> holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_b_color))
-                else -> holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_neutral_color))
+                "A" -> {
+                    holder.groupInfo.setBackgroundResource(R.drawable.group_badge_background_modern)
+                    holder.groupInfo.setTextColor(ContextCompat.getColor(context, R.color.group_a_text))
+                }
+                "B" -> {
+                    holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_b_color))
+                    holder.groupInfo.setTextColor(ContextCompat.getColor(context, R.color.group_b_text))
+                }
+                else -> {
+                    holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_neutral_color))
+                    holder.groupInfo.setTextColor(ContextCompat.getColor(context, R.color.md_theme_light_onSurfaceVariant))
+                }
             }
         } else {
             holder.groupInfo.visibility = View.GONE
         }
+    }
 
-        // Dauer-Indikator für Mehrfachstunden
-        if (entry.isMultiplePeriod) {
-            holder.durationIndicator.visibility = View.VISIBLE
-            holder.durationIndicator.text = entry.durationText
-
-            // Verschiedene Farben je nach Anzahl der Stunden
-            val colorRes = when (entry.originalEntries.size) {
-                2 -> R.color.double_period_color
-                3 -> R.color.triple_period_color
-                else -> R.color.multiple_period_color
-            }
-            holder.durationIndicator.setBackgroundColor(ContextCompat.getColor(context, colorRes))
-
-            // Verstärkte visuelle Hervorhebung für Mehrfachstunden
-            holder.periodIndicator.visibility = View.VISIBLE
-            holder.periodIndicator.setBackgroundColor(ContextCompat.getColor(context, colorRes))
-
-        } else {
-            holder.durationIndicator.visibility = View.GONE
-            holder.periodIndicator.visibility = View.GONE
-        }
-
-        // Prüfe ob Unterricht ausfällt
-        val isCancelled = entry.type == "Entfällt"
-
-        // Setze das Status-Icon basierend auf dem Typ
+    private fun setupStatusIcon(holder: ViewHolder, entry: MergedTimetableEntry, context: android.content.Context) {
         when (entry.type) {
             "Entfällt" -> {
                 holder.statusIcon.visibility = View.VISIBLE
@@ -131,56 +118,92 @@ class MergedTimetableAdapter(private val entries: List<MergedTimetableEntry>) :
                 holder.statusIcon.setColorFilter(ContextCompat.getColor(context, R.color.substitution_event_text))
             }
         }
-
-        // Ausgegraut Darstellung für ausgefallene Stunden
-        if (isCancelled) {
-            holder.startTime.alpha = 0.5f
-            holder.endTime.alpha = 0.5f
-            holder.period.alpha = 0.5f
-            holder.subject.alpha = 0.5f
-            holder.teacher.alpha = 0.5f
-            holder.room.alpha = 0.5f
-            holder.groupInfo.alpha = 0.5f
-            holder.durationIndicator.alpha = 0.5f
-
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray))
-            holder.itemView.alpha = 0.7f
-            holder.subject.paintFlags = holder.subject.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
-        } else {
-            holder.startTime.alpha = 1.0f
-            holder.endTime.alpha = 1.0f
-            holder.period.alpha = 1.0f
-            holder.subject.alpha = 1.0f
-            holder.teacher.alpha = 1.0f
-            holder.room.alpha = 1.0f
-            holder.groupInfo.alpha = 1.0f
-            holder.durationIndicator.alpha = 1.0f
-
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
-            holder.itemView.alpha = 1.0f
-            holder.subject.paintFlags = holder.subject.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
-        }
-
-        // Fachspezifische Farbkodierung
-        val subjectColor = getSubjectColor(entry.subject)
-        // Hier könnten Sie eine subtile Farbkodierung am linken Rand hinzufügen
     }
 
-    private fun getSubjectColor(subject: String): Int {
-        return when {
-            subject.contains("Mathe", ignoreCase = true) -> R.color.timetable_math
-            subject.contains("Deutsch", ignoreCase = true) ||
-            subject.contains("Englisch", ignoreCase = true) ||
-            subject.contains("Französisch", ignoreCase = true) -> R.color.timetable_language
-            subject.contains("Physik", ignoreCase = true) ||
-            subject.contains("Chemie", ignoreCase = true) ||
-            subject.contains("Biologie", ignoreCase = true) -> R.color.timetable_science
-            subject.contains("Geschichte", ignoreCase = true) ||
-            subject.contains("Erdkunde", ignoreCase = true) -> R.color.timetable_history
-            subject.contains("Kunst", ignoreCase = true) ||
-            subject.contains("Musik", ignoreCase = true) -> R.color.timetable_arts
-            subject.contains("Sport", ignoreCase = true) -> R.color.timetable_sport
-            else -> R.color.timetable_default
+    private fun setupDurationIndicator(holder: ViewHolder, entry: MergedTimetableEntry, context: android.content.Context) {
+        if (entry.isMultiplePeriod) {
+            holder.durationIndicator.visibility = View.VISIBLE
+
+            val (text, backgroundRes, textColor) = when (entry.periods.size) {
+                2 -> Triple("2 std", R.drawable.duration_indicator_background_modern, R.color.badge_text_light)
+                3 -> Triple("3 std.", R.drawable.triple_period_background, R.color.badge_text_light)
+                else -> Triple("${entry.periods.size} Stunden", R.drawable.multiple_period_background, R.color.badge_text_light)
+            }
+
+            holder.durationIndicator.text = text
+            holder.durationIndicator.setBackgroundResource(backgroundRes)
+            holder.durationIndicator.setTextColor(ContextCompat.getColor(context, textColor))
+        } else {
+            holder.durationIndicator.visibility = View.GONE
+        }
+    }
+
+    /**
+     * **NEUE MODERNE PERIODE-INDIKATOR FUNKTION**
+     * Verwendet abgerundete, elegantere Formen für den Merge-Indikator
+     */
+    private fun setupModernPeriodIndicator(holder: ViewHolder, entry: MergedTimetableEntry, context: android.content.Context) {
+        if (entry.isMultiplePeriod) {
+            holder.periodIndicator.visibility = View.VISIBLE
+
+            // Wähle das moderne Design basierend auf der Anzahl der Perioden
+            val indicatorRes = when (entry.periods.size) {
+                2 -> R.drawable.period_indicator_double_rounded  // **NEUE ABGERUNDETE VERSION**
+                3 -> R.drawable.period_indicator_triple_rounded  // **NEUE ABGERUNDETE VERSION**
+                else -> R.drawable.period_indicator_multiple_rounded // **NEUE ABGERUNDETE VERSION**
+            }
+
+            holder.periodIndicator.setBackgroundResource(indicatorRes)
+
+            // Optional: Leichte Elevation für mehr Tiefe
+            holder.periodIndicator.elevation = 2f
+
+            // Optional: Sanfte Animation beim Erscheinen
+            holder.periodIndicator.alpha = 0f
+            holder.periodIndicator.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+
+        } else {
+            holder.periodIndicator.visibility = View.GONE
+        }
+    }
+
+    private fun applyAppearanceForCancelledLessons(holder: ViewHolder, entry: MergedTimetableEntry, context: android.content.Context) {
+        val isCancelled = entry.type == "Entfällt"
+
+        if (isCancelled) {
+            // Reduzierte Transparenz für ausgefallene Stunden
+            listOf(
+                holder.startTime, holder.endTime,
+                holder.subject, holder.teacher, holder.room, holder.groupInfo
+            ).forEach { it.alpha = 0.6f }
+
+            // Graue Hintergrundfarbe
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.surface_tint_3))
+            holder.itemView.alpha = 0.8f
+
+            // Durchgestrichener Text für das Fach
+            holder.subject.paintFlags = holder.subject.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+
+            // **AUCH DER PERIODE-INDIKATOR WIRD GEDIMMT**
+            holder.periodIndicator.alpha = 0.5f
+        } else {
+            // Normale Darstellung
+            listOf(
+                holder.startTime, holder.endTime,
+                holder.subject, holder.teacher, holder.room, holder.groupInfo
+            ).forEach { it.alpha = 1.0f }
+
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent))
+            holder.itemView.alpha = 1.0f
+
+            // Entferne Durchstreichung
+            holder.subject.paintFlags = holder.subject.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
+
+            // **NORMALE SICHTBARKEIT FÜR PERIODE-INDIKATOR**
+            holder.periodIndicator.alpha = 1.0f
         }
     }
 

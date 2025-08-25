@@ -17,7 +17,8 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         val startTime: TextView = view.findViewById(R.id.tv_start_time)
         val endTime: TextView = view.findViewById(R.id.tv_end_time)
         val period: TextView = view.findViewById(R.id.tv_period)
-        val subject: TextView = view.findViewById(R.id.tv_subject)
+        val subjectInline: TextView = view.findViewById(R.id.tv_subject_inline)
+        val subjectFull: TextView = view.findViewById(R.id.tv_subject_full)
         val teacher: TextView = view.findViewById(R.id.tv_teacher)
         val room: TextView = view.findViewById(R.id.tv_room)
         val statusIcon: ImageView = view.findViewById(R.id.iv_status)
@@ -34,11 +35,11 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         val entry = entries[position]
         val context = holder.itemView.context
 
-        // Setze die Zeiten
+        // Zeiten
         holder.startTime.text = entry.startTime
         holder.endTime.text = entry.endTime
 
-        // Formatiere die Stunden-Nummer schöner
+        // Periodenformatierung
         val periodText = when {
             entry.period.contains(".") -> entry.period.replace(".", ". Std")
             entry.period.isNotEmpty() -> "${entry.period}. Std"
@@ -46,10 +47,38 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         }
         holder.period.text = periodText
 
-        // Setze das Fach
-        holder.subject.text = entry.subject
+        // Reset Titel Views
+        holder.subjectInline.visibility = View.VISIBLE
+        holder.subjectFull.visibility = View.GONE
+        holder.subjectInline.text = entry.subject
+        holder.subjectFull.text = entry.subject
 
-        // Setze den Lehrer (mit besserer Formatierung)
+        // Breitenmessung (ohne auf Ellipsis zu warten)
+        fun applyTitleLayout() {
+            val inlineWidth = holder.subjectInline.width
+            if (inlineWidth > 0) {
+                val available = inlineWidth - holder.subjectInline.paddingLeft - holder.subjectInline.paddingRight
+                val textWidth = holder.subjectInline.paint.measureText(entry.subject)
+                if (textWidth > available) {
+                    holder.subjectFull.visibility = View.VISIBLE
+                    holder.subjectInline.visibility = View.GONE
+                } else {
+                    holder.subjectFull.visibility = View.GONE
+                    holder.subjectInline.visibility = View.VISIBLE
+                }
+            }
+        }
+        // Falls width noch 0 -> nach Layout erneut
+        if (holder.subjectInline.width == 0) {
+            holder.subjectInline.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    holder.subjectInline.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    applyTitleLayout()
+                }
+            })
+        } else applyTitleLayout()
+
+        // Lehrerformatierung
         val teacherText = when {
             entry.teacher.isNotEmpty() && !entry.teacher.startsWith("Herr") && !entry.teacher.startsWith("Frau") ->
                 if (entry.teacher.length <= 4) entry.teacher else "Herr/Frau ${entry.teacher}"
@@ -58,20 +87,18 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
         }
         holder.teacher.text = teacherText
 
-        // Setze den Raum
+        // Raum
         holder.room.text = if (entry.room.isNotEmpty()) entry.room else "?"
 
+        // Gruppe
         val groupText = when {
             entry.detectedGroup != null -> "Gruppe ${entry.detectedGroup}"
             entry.groupNames.isNotEmpty() -> entry.groupNames.joinToString(", ")
             else -> ""
         }
-
         if (groupText.isNotEmpty()) {
             holder.groupInfo.visibility = View.VISIBLE
             holder.groupInfo.text = groupText
-
-            // Farbkodierung je nach Gruppe
             when (entry.detectedGroup) {
                 "A" -> holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_a_color))
                 "B" -> holder.groupInfo.setBackgroundColor(ContextCompat.getColor(context, R.color.group_b_color))
@@ -81,10 +108,8 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
             holder.groupInfo.visibility = View.GONE
         }
 
-        // Prüfe ob Unterricht ausfällt und wende entsprechende Darstellung an
+        // Type / Status Icon
         val isCancelled = entry.type == "Entfällt"
-
-        // Setze das Status-Icon basierend auf dem Typ
         when (entry.type) {
             "Entfällt" -> {
                 holder.statusIcon.visibility = View.VISIBLE
@@ -103,57 +128,21 @@ class TimetableAdapter(private val entries: List<TimetableEntry>) :
             }
         }
 
-        // Ausgegraut Darstellung für ausgefallene Stunden
+        // Alpha & Strikethrough auf beide potenziellen Titel anwenden
         if (isCancelled) {
-            // Reduziere die Transparenz für alle Text-Elemente
-            holder.startTime.alpha = 0.5f
-            holder.endTime.alpha = 0.5f
-            holder.period.alpha = 0.5f
-            holder.subject.alpha = 0.5f
-            holder.teacher.alpha = 0.5f
-            holder.room.alpha = 0.5f
-            holder.groupInfo.alpha = 0.5f
-
-            // Setze graue Hintergrundfarbe
+            listOf(holder.startTime, holder.endTime, holder.period, holder.subjectInline, holder.subjectFull, holder.teacher, holder.room, holder.groupInfo)
+                .forEach { it.alpha = 0.5f }
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray))
             holder.itemView.alpha = 0.7f
-
-            // Durchstreiche den Text für das Fach
-            holder.subject.paintFlags = holder.subject.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+            holder.subjectInline.paintFlags = holder.subjectInline.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+            holder.subjectFull.paintFlags = holder.subjectFull.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
         } else {
-            // Normale Darstellung für reguläre Stunden
-            holder.startTime.alpha = 1.0f
-            holder.endTime.alpha = 1.0f
-            holder.period.alpha = 1.0f
-            holder.subject.alpha = 1.0f
-            holder.teacher.alpha = 1.0f
-            holder.room.alpha = 1.0f
-            holder.groupInfo.alpha = 1.0f
-
-            // Setze die normale Hintergrundfarbe
+            listOf(holder.startTime, holder.endTime, holder.period, holder.subjectInline, holder.subjectFull, holder.teacher, holder.room, holder.groupInfo)
+                .forEach { it.alpha = 1.0f }
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
             holder.itemView.alpha = 1.0f
-
-            // Entferne Durchstreichung
-            holder.subject.paintFlags = holder.subject.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
-        }
-    }
-
-    private fun getSubjectColor(subject: String): Int {
-        return when {
-            subject.contains("Mathe", ignoreCase = true) -> R.color.timetable_math
-            subject.contains("Deutsch", ignoreCase = true) ||
-            subject.contains("Englisch", ignoreCase = true) ||
-            subject.contains("Französisch", ignoreCase = true) -> R.color.timetable_language
-            subject.contains("Physik", ignoreCase = true) ||
-            subject.contains("Chemie", ignoreCase = true) ||
-            subject.contains("Biologie", ignoreCase = true) -> R.color.timetable_science
-            subject.contains("Geschichte", ignoreCase = true) ||
-            subject.contains("Erdkunde", ignoreCase = true) -> R.color.timetable_history
-            subject.contains("Kunst", ignoreCase = true) ||
-            subject.contains("Musik", ignoreCase = true) -> R.color.timetable_arts
-            subject.contains("Sport", ignoreCase = true) -> R.color.timetable_sport
-            else -> R.color.timetable_default
+            holder.subjectInline.paintFlags = holder.subjectInline.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
+            holder.subjectFull.paintFlags = holder.subjectFull.paintFlags and android.graphics.Paint.STRIKE_THRU_TEXT_FLAG.inv()
         }
     }
 
