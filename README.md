@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Archived experiment – no longer maintained.** This app was a personal experiment. It receives no updates
+> or security fixes. It handles school account credentials, so please don't use it with a real EduPage account.
+>
+> *Deutsch: Archiviertes Experiment, wird nicht mehr gepflegt. Bitte nicht mit echten EduPage-Zugangsdaten verwenden.*
+
 # EduNew — Unofficial EduPage for Android
 
 Fast, modern, and simple Android app to view your EduPage timetable and substitutions after login. Filter by classes, groups, and special subjects to see exactly what matters.
